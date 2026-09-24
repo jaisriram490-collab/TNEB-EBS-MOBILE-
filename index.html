@@ -7,6 +7,8 @@
 
   <!-- Leaflet CSS via Cloudflare CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous" />
+  <!-- CSV Parser Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,7 +25,7 @@
     header {
       background: #003366;
       color: #fff;
-      padding: 10px 14px;
+      padding: 10px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -32,11 +34,11 @@
       z-index: 1000;
     }
 
-    header h1 { font-size: 0.95rem; font-weight: bold; }
-    .header-actions { display: flex; gap: 6px; }
+    header h1 { font-size: 0.90rem; font-weight: bold; }
+    .header-actions { display: flex; gap: 5px; }
     .btn-hdr {
       background: #ff9800; border: none; color: #111; font-weight: bold;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;
+      padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem;
     }
 
     .controls {
@@ -125,8 +127,11 @@
 
   <div id="app-container">
     <header>
-      <h1>TNEB GIS Navigator</h1>
+      <h1>TNEB GIS</h1>
       <div class="header-actions">
+        <!-- Hidden CSV File Input -->
+        <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
+        <button class="btn-hdr" onclick="document.getElementById('csvFileInput').click()">📁 Import</button>
         <button class="btn-hdr" onclick="openAddModal()">➕ Add</button>
         <button class="btn-hdr" onclick="exportCSV()">💾 Export</button>
       </div>
@@ -199,28 +204,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
 
   <script>
-    // Initial Fallback Data
     const defaultData = [
       { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "RMU", Asset_Name: "RMU 01", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Remarks: "3-Way SF6" },
       { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "Structure", Asset_Name: "DP 01", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Remarks: "250kVA DT" },
       { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Tie)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Race Course Feeder", Remarks: "Tie Switch" }
     ];
 
-    let stored = localStorage.getItem('tneb_asset_v7');
+    let stored = localStorage.getItem('tneb_asset_v8');
     let masterData = stored ? JSON.parse(stored) : defaultData;
 
     function persistData() {
-      localStorage.setItem('tneb_asset_v7', JSON.stringify(masterData));
+      localStorage.setItem('tneb_asset_v8', JSON.stringify(masterData));
     }
 
-    // Initialize Map with zoom settings
     const map = L.map('map', {
       zoomControl: true,
       fadeAnimation: false,
       zoomSnap: 0.5
     }).setView([13.0080, 80.2040], 15);
 
-    // High-Resolution Crisp Mobile Tile Layer
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       detectRetina: true,
@@ -235,7 +237,6 @@
     const markerLayer = L.layerGroup().addTo(map);
     const pathLayer = L.layerGroup().addTo(map);
 
-    // Click map anywhere to pin
     map.on('click', function(e) {
       openAddModal();
       document.getElementById('m_lat').value = e.latlng.lat.toFixed(6);
@@ -418,6 +419,28 @@
       }
     };
 
+    // CSV File Import Handler
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          if (results.data && results.data.length > 0) {
+            masterData = results.data;
+            persistData();
+            populateDropdowns();
+            alert(`Imported ${masterData.length} network records successfully!`);
+          } else {
+            alert("No valid rows found in CSV file.");
+          }
+        }
+      });
+    });
+
+    // CSV File Export Handler
     function exportCSV() {
       let csv = "Substation,Feeder,Branch,AE_Section,Mobile_Unit,Asset_Type,Asset_Name,Sequence_No,Latitude,Longitude,Tie_Feeder,Remarks\n";
       masterData.forEach(d => {
