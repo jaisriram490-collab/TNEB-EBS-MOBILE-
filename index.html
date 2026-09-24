@@ -13,31 +13,21 @@
     body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #eef2f5; }
 
     header {
-      background: #003366;
-      color: #fff;
-      padding: 10px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-      z-index: 1001;
+      background: #003366; color: #fff; padding: 10px 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25); z-index: 1001;
     }
     header h1 { font-size: 0.95rem; font-weight: 700; }
     .header-actions { display: flex; gap: 6px; }
     .btn-hdr {
       background: #ff9800; border: none; color: #111; font-weight: 700;
-      padding: 5px 9px; border-radius: 4px; cursor: pointer; font-size: 0.72rem;
+      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;
     }
     .btn-hdr:active { transform: scale(0.96); }
 
     .controls {
-      background: #ffffff;
-      padding: 8px 12px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      border-bottom: 1px solid #dcdcdc;
-      z-index: 1000;
+      background: #ffffff; padding: 8px 12px; display: grid;
+      grid-template-columns: 1fr 1fr; gap: 8px; border-bottom: 1px solid #dcdcdc; z-index: 1000;
     }
     .select-box label {
       display: block; font-size: 0.68rem; font-weight: 700; color: #555;
@@ -47,7 +37,6 @@
       width: 100%; padding: 6px 8px; font-size: 0.82rem;
       border: 1px solid #bbb; border-radius: 4px; background: #fdfdfd; outline: none;
     }
-    select:focus { border-color: #003366; background: #fff; }
 
     #map { flex: 1; width: 100%; z-index: 1; }
 
@@ -55,8 +44,7 @@
       position: absolute; bottom: 12px; left: 10px; right: 10px;
       background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(4px);
       padding: 7px 10px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      display: flex; justify-content: space-around; font-size: 0.72rem; font-weight: 700;
-      z-index: 1000;
+      display: flex; justify-content: space-around; font-size: 0.72rem; font-weight: 700; z-index: 1000;
     }
     .legend-item { display: flex; align-items: center; gap: 4px; }
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
@@ -65,6 +53,7 @@
     .dot.structure { background: #1976d2; }
     .dot.tie { background: #ffd700; border: 2px solid #b71c1c; }
 
+    /* Modal Form */
     #assetModal {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.6); z-index: 2000;
@@ -77,7 +66,7 @@
     .modal-box h3 { font-size: 1rem; color: #003366; margin-bottom: 8px; }
     .gps-btn {
       width: 100%; background: #0288d1; color: white; border: none; font-weight: 700;
-      padding: 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; margin-bottom: 10px;
+      padding: 9px; border-radius: 4px; font-size: 0.78rem; cursor: pointer; margin-bottom: 10px;
     }
     .section-title {
       font-size: 0.72rem; font-weight: 800; color: #003366; background: #e3f2fd;
@@ -86,15 +75,15 @@
     .form-group { margin-bottom: 6px; }
     .form-group label { display: block; font-size: 0.68rem; font-weight: 700; color: #444; }
     .form-group input, .form-group select {
-      width: 100%; padding: 5px 7px; font-size: 0.8rem; border: 1px solid #ccc;
+      width: 100%; padding: 6px 8px; font-size: 0.82rem; border: 1px solid #ccc;
       border-radius: 4px; margin-top: 2px;
     }
     .coords-row { display: flex; gap: 6px; }
     .coords-row input { flex: 1; }
-    .modal-btns { display: flex; gap: 8px; margin-top: 12px; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 14px; }
     .modal-btns button {
-      flex: 1; padding: 8px; border: none; border-radius: 4px; font-weight: 700;
-      font-size: 0.8rem; cursor: pointer;
+      flex: 1; padding: 9px; border: none; border-radius: 4px; font-weight: 700;
+      font-size: 0.85rem; cursor: pointer;
     }
     .btn-save { background: #2e7d32; color: #fff; }
     .btn-cancel { background: #757575; color: #fff; }
@@ -139,39 +128,39 @@
       <button type="button" class="gps-btn" onclick="fetchCurrentGPS()">📍 Auto-Fill Current GPS</button>
       
       <div class="section-title">1. Location & Feeder Identification</div>
-      <div class="form-group"><label>Substation Name</label><input type="text" id="m_ss" placeholder="e.g., Guindy 110kV SS" /></div>
-      <div class="form-group"><label>Feeder Name</label><input type="text" id="m_feeder" placeholder="e.g., Industrial Feeder" /></div>
-      <div class="form-group"><label>Branch / Path Name</label><input type="text" id="m_branch" value="Main" placeholder="Main, Branch-1, Spur-A" /></div>
+      <div class="form-group"><label>Substation Name *</label><input type="text" id="m_ss" placeholder="e.g., Guindy 110kV SS" /></div>
+      <div class="form-group"><label>Feeder Name *</label><input type="text" id="m_feeder" placeholder="e.g., Industrial Feeder" /></div>
+      <div class="form-group"><label>Branch / Path</label><input type="text" id="m_branch" value="Main" placeholder="Main, Branch-1" /></div>
 
       <div class="section-title">2. In-Charge Responsibility</div>
       <div class="coords-row">
-        <div class="form-group" style="flex:1;"><label>AE Section</label><input type="text" id="m_ae" placeholder="e.g., AE/O&M/Guindy" /></div>
-        <div class="form-group" style="flex:1;"><label>Mobile / Unit</label><input type="text" id="m_mobile" placeholder="e.g., Unit-1 / FOC South" /></div>
+        <div class="form-group" style="flex:1;"><label>AE Section</label><input type="text" id="m_ae" placeholder="e.g., AE/Guindy" /></div>
+        <div class="form-group" style="flex:1;"><label>Mobile / Unit</label><input type="text" id="m_mobile" placeholder="e.g., Mobile-1" /></div>
       </div>
 
       <div class="section-title">3. Equipment Details & Position</div>
       <div class="form-group">
-        <label>Asset Type</label>
+        <label>Asset Type *</label>
         <select id="m_type">
           <option value="RMU">RMU (Ring Main Unit)</option>
           <option value="RMG">RMG (Ring Main Gear)</option>
           <option value="Structure">Structure / DP / DT Pole</option>
         </select>
       </div>
-      <div class="form-group"><label>Asset Name / Number</label><input type="text" id="m_name" placeholder="e.g., RMU 04 (Near Post Office)" /></div>
-      <div class="form-group"><label>Sequence Number (e.g. 1, 2, 2.5, 3...)</label><input type="number" step="any" id="m_seq" value="1" /></div>
+      <div class="form-group"><label>Asset Name / Number *</label><input type="text" id="m_name" placeholder="e.g., RMU 04 (Near Bank)" /></div>
+      <div class="form-group"><label>Sequence Number</label><input type="number" step="any" id="m_seq" value="1" /></div>
       <div class="form-group">
-        <label>Latitude & Longitude</label>
+        <label>Latitude & Longitude *</label>
         <div class="coords-row">
-          <input type="number" step="any" id="m_lat" placeholder="Latitude (13.xxxx)" />
-          <input type="number" step="any" id="m_lng" placeholder="Longitude (80.xxxx)" />
+          <input type="number" step="any" id="m_lat" placeholder="Latitude (e.g. 13.0080)" />
+          <input type="number" step="any" id="m_lng" placeholder="Longitude (e.g. 80.2040)" />
         </div>
       </div>
 
-      <div class="section-title">4. Inter-Feeder / Cross Connection</div>
+      <div class="section-title">4. Inter-Feeder / Tie Switch (Optional)</div>
       <div class="form-group"><label>Connected / Tie Feeder</label><input type="text" id="m_tie_feeder" placeholder="e.g., Race Course Feeder" /></div>
-      <div class="form-group"><label>Connected Feeder's Substation</label><input type="text" id="m_tie_ss" placeholder="e.g., Same SS OR Saidapet 33kV SS" /></div>
-      <div class="form-group"><label>Switch Status / Remarks</label><input type="text" id="m_remarks" placeholder="e.g., Normally Open (N.O.) Tie Point" /></div>
+      <div class="form-group"><label>Connected Substation</label><input type="text" id="m_tie_ss" placeholder="e.g., Saidapet 33kV SS" /></div>
+      <div class="form-group"><label>Remarks</label><input type="text" id="m_remarks" placeholder="e.g., Normally Open Tie Breaker" /></div>
 
       <div class="modal-btns">
         <button type="button" class="btn-cancel" onclick="closeAssetModal()">Cancel</button>
@@ -184,26 +173,30 @@
 
   <script>
     const defaultData = [
-      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/O&M/Guindy West", Mobile_Unit: "Mobile-1", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Tie_SS: "", Remarks: "3-Way SF6, Normal Feed" },
-      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/O&M/Guindy West", Mobile_Unit: "Mobile-1", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Tie_SS: "", Remarks: "250kVA DT + HG Fuse" },
-      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/O&M/Saidapet", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Cross Tie Point)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Bazaar Feeder", Tie_SS: "Saidapet 33kV SS", Remarks: "Normally Open (N.O.) Tie Breaker" }
+      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Tie_SS: "", Remarks: "3-Way SF6" },
+      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Tie_SS: "", Remarks: "250kVA DT" },
+      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Saidapet", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Cross Tie)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Bazaar Feeder", Tie_SS: "Saidapet 33kV SS", Remarks: "N.O. Tie Breaker" }
     ];
 
-    let stored = localStorage.getItem('tneb_asset_data_v3');
+    let stored = localStorage.getItem('tneb_asset_data_v4');
     let masterData = stored ? JSON.parse(stored) : defaultData;
 
     function persistData() {
-      localStorage.setItem('tneb_asset_data_v3', JSON.stringify(masterData));
+      localStorage.setItem('tneb_asset_data_v4', JSON.stringify(masterData));
     }
 
     const map = L.map('map').setView([13.0080, 80.2040], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
     const markerLayer = L.layerGroup().addTo(map);
     const pathLayer = L.layerGroup().addTo(map);
+
+    // TAP ON MAP TO PIN DIRECTLY
+    map.on('click', function(e) {
+      openAddModal();
+      document.getElementById('m_lat').value = e.latlng.lat.toFixed(6);
+      document.getElementById('m_lng').value = e.latlng.lng.toFixed(6);
+    });
 
     const ssSelect = document.getElementById('ssSelect');
     const feederSelect = document.getElementById('feederSelect');
@@ -223,10 +216,7 @@
 
       if (currentSS && substations.includes(currentSS)) {
         ssSelect.value = currentSS;
-        const feeders = [...new Set(
-          masterData.filter(d => (d.Substation || '').trim() === currentSS).map(d => (d.Feeder || '').trim())
-        )].filter(Boolean);
-
+        const feeders = [...new Set(masterData.filter(d => (d.Substation || '').trim() === currentSS).map(d => (d.Feeder || '').trim()))].filter(Boolean);
         feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
         feeders.forEach(f => {
           const opt = document.createElement('option');
@@ -255,10 +245,7 @@
         return;
       }
 
-      const feeders = [...new Set(
-        masterData.filter(d => (d.Substation || '').trim() === selectedSS).map(d => (d.Feeder || '').trim())
-      )].filter(Boolean);
-
+      const feeders = [...new Set(masterData.filter(d => (d.Substation || '').trim() === selectedSS).map(d => (d.Feeder || '').trim()))].filter(Boolean);
       feeders.forEach(f => {
         const opt = document.createElement('option');
         opt.value = f;
@@ -275,7 +262,6 @@
     window.deleteAssetByIndex = function(index) {
       const target = masterData[index];
       if (!target) return;
-
       if (confirm(`Delete ${target.Asset_Type}: "${target.Asset_Name}"?`)) {
         masterData.splice(index, 1);
         persistData();
@@ -323,7 +309,6 @@
       });
 
       matchedAssets.sort((a, b) => parseFloat(a.Sequence_No) - parseFloat(b.Sequence_No));
-
       if (matchedAssets.length === 0) return;
 
       const bounds = [];
@@ -350,21 +335,21 @@
 
         const tieBoxHtml = hasTie ? `
           <div style="background:#fff3e0; border-left:3px solid #ff9800; padding:4px 6px; margin:5px 0; font-size:11px;">
-            <b style="color:#e65100;">⚡ INTER-FEEDER TIE POINT</b><br/>
-            <b>Connects to:</b> ${item.Tie_Feeder}<br/>
+            <b style="color:#e65100;">⚡ TIE POINT</b><br/>
+            <b>To Feeder:</b> ${item.Tie_Feeder}<br/>
             <b>Target SS:</b> ${item.Tie_SS || 'Same SS'}
           </div>` : '';
 
         marker.bindPopup(`
-          <div style="font-size:12px; line-height:1.4; min-width: 220px;">
+          <div style="font-size:12px; line-height:1.4; min-width: 210px;">
             <b style="color:${color}; font-size:13px;">[${item.Asset_Type}] ${item.Asset_Name}</b><br/>
             <b>Path:</b> ${item.Branch || 'Main'} | <b>Seq:</b> #${item.Sequence_No}<br/>
             <b>AE Section:</b> ${item.AE_Section || 'N/A'}<br/>
             <b>Mobile Unit:</b> ${item.Mobile_Unit || 'N/A'}<br/>
             ${tieBoxHtml}
-            <b>Status/Remarks:</b> ${item.Remarks || 'N/A'}<br/>
+            <b>Status:</b> ${item.Remarks || 'N/A'}<br/>
             <b>GPS:</b> ${lat.toFixed(5)}, ${lng.toFixed(5)}<br/>
-            <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+            <div style="margin-top:8px; display:flex; gap:5px;">
               <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank"
                  style="color:#fff; background:#0056b3; padding:4px 7px; border-radius:3px; text-decoration:none; display:inline-block; font-size:11px; font-weight:bold;">
                 Map ↗
@@ -446,9 +431,10 @@
 
     function fetchCurrentGPS() {
       if (!navigator.geolocation) {
-        alert("GPS is not supported.");
+        alert("GPS not supported.");
         return;
       }
       navigator.geolocation.getCurrentPosition(
         pos => {
-          document.getElementById('m_la
+          document.getElementById('m_lat').value = pos.coords.latitude.toFixed(6);
+          document.getElementById('m_lng').value = pos.
