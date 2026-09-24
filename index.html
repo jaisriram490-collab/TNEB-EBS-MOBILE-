@@ -5,47 +5,116 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>TNEB Feeder Asset GIS Navigator</title>
   
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #eef2f5; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
 
     header {
-      background: #003366; color: #fff; padding: 10px 14px;
-      display: flex; justify-content: space-between; align-items: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25); z-index: 1001;
+      background: #003366;
+      color: #fff;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      z-index: 1000;
     }
-    header h1 { font-size: 0.95rem; font-weight: 700; }
-    .header-actions { display: flex; gap: 6px; }
+
+    header h1 {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 6px;
+    }
+
     .btn-hdr {
-      background: #ff9800; border: none; color: #111; font-weight: 700;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;
+      background: #ff9800;
+      border: none;
+      color: #111;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
     }
-    .btn-hdr:active { transform: scale(0.96); }
 
     .controls {
-      background: #ffffff; padding: 8px 12px; display: grid;
-      grid-template-columns: 1fr 1fr; gap: 8px; border-bottom: 1px solid #dcdcdc; z-index: 1000;
-    }
-    .select-box label {
-      display: block; font-size: 0.68rem; font-weight: 700; color: #555;
-      text-transform: uppercase; margin-bottom: 2px;
-    }
-    select {
-      width: 100%; padding: 6px 8px; font-size: 0.82rem;
-      border: 1px solid #bbb; border-radius: 4px; background: #fdfdfd; outline: none;
+      background: #ffffff;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      border-bottom: 1px solid #dcdcdc;
+      flex-shrink: 0;
+      z-index: 1000;
     }
 
-    #map { flex: 1; width: 100%; z-index: 1; }
+    .select-box label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #555;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    select {
+      width: 100%;
+      padding: 7px 8px;
+      font-size: 0.85rem;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      background: #fdfdfd;
+      outline: none;
+    }
+
+    /* Fixed Height for Map Container on Mobile */
+    #map {
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 200px;
+      background: #e5e3df;
+      z-index: 1;
+    }
 
     .legend-bar {
-      position: absolute; bottom: 12px; left: 10px; right: 10px;
-      background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(4px);
-      padding: 7px 10px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      display: flex; justify-content: space-around; font-size: 0.72rem; font-weight: 700; z-index: 1000;
+      position: absolute;
+      bottom: 12px;
+      left: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(4px);
+      padding: 7px 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      display: flex;
+      justify-content: space-around;
+      font-size: 0.72rem;
+      font-weight: 700;
+      z-index: 999;
     }
+
     .legend-item { display: flex; align-items: center; gap: 4px; }
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .dot.rmu { background: #d32f2f; }
@@ -55,14 +124,30 @@
 
     /* Modal Form */
     #assetModal {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.6); z-index: 2000;
-      justify-content: center; align-items: center; padding: 12px;
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.65);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
     }
+
     .modal-box {
-      background: #fff; width: 100%; max-width: 420px; max-height: 90vh;
-      overflow-y: auto; padding: 16px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      background: #fff;
+      width: 100%;
+      max-width: 420px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
+
     .modal-box h3 { font-size: 1rem; color: #003366; margin-bottom: 8px; }
     .gps-btn {
       width: 100%; background: #0288d1; color: white; border: none; font-weight: 700;
@@ -82,7 +167,7 @@
     .coords-row input { flex: 1; }
     .modal-btns { display: flex; gap: 8px; margin-top: 14px; }
     .modal-btns button {
-      flex: 1; padding: 9px; border: none; border-radius: 4px; font-weight: 700;
+      flex: 1; padding: 10px; border: none; border-radius: 4px; font-weight: 700;
       font-size: 0.85rem; cursor: pointer;
     }
     .btn-save { background: #2e7d32; color: #fff; }
@@ -91,36 +176,39 @@
 </head>
 <body>
 
-  <header>
-    <h1>TNEB GIS Navigator</h1>
-    <div class="header-actions">
-      <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
-      <button class="btn-hdr" onclick="document.getElementById('csvFileInput').click()">📁 Import</button>
-      <button class="btn-hdr" onclick="openAddModal()">➕ Add</button>
-      <button class="btn-hdr" onclick="exportCSV()">💾 Export</button>
-    </div>
-  </header>
+  <div id="app-container">
+    <header>
+      <h1>TNEB GIS Navigator</h1>
+      <div class="header-actions">
+        <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
+        <button class="btn-hdr" onclick="document.getElementById('csvFileInput').click()">📁 Import</button>
+        <button class="btn-hdr" onclick="openAddModal()">➕ Add</button>
+        <button class="btn-hdr" onclick="exportCSV()">💾 Export</button>
+      </div>
+    </header>
 
-  <div class="controls">
-    <div class="select-box">
-      <label for="ssSelect">Substation (SS)</label>
-      <select id="ssSelect"><option value="">-- Choose Substation --</option></select>
+    <div class="controls">
+      <div class="select-box">
+        <label for="ssSelect">Substation (SS)</label>
+        <select id="ssSelect"><option value="">-- Choose Substation --</option></select>
+      </div>
+      <div class="select-box">
+        <label for="feederSelect">Feeder</label>
+        <select id="feederSelect" disabled><option value="">-- Choose Feeder --</option></select>
+      </div>
     </div>
-    <div class="select-box">
-      <label for="feederSelect">Feeder</label>
-      <select id="feederSelect" disabled><option value="">-- Choose Feeder --</option></select>
+
+    <div id="map"></div>
+
+    <div class="legend-bar">
+      <div class="legend-item"><span class="dot rmu"></span> RMU</div>
+      <div class="legend-item"><span class="dot rmg"></span> RMG</div>
+      <div class="legend-item"><span class="dot structure"></span> Structure</div>
+      <div class="legend-item"><span class="dot tie"></span> Tie Point</div>
     </div>
   </div>
 
-  <div id="map"></div>
-
-  <div class="legend-bar">
-    <div class="legend-item"><span class="dot rmu"></span> RMU</div>
-    <div class="legend-item"><span class="dot rmg"></span> RMG</div>
-    <div class="legend-item"><span class="dot structure"></span> Structure</div>
-    <div class="legend-item"><span class="dot tie"></span> Tie Point</div>
-  </div>
-
+  <!-- Asset Modal -->
   <div id="assetModal">
     <div class="modal-box">
       <h3 id="modalTitle">Add Network Asset</h3>
@@ -169,6 +257,7 @@
     </div>
   </div>
 
+  <!-- Leaflet Map JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
@@ -178,20 +267,30 @@
       { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Saidapet", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Cross Tie)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Bazaar Feeder", Tie_SS: "Saidapet 33kV SS", Remarks: "N.O. Tie Breaker" }
     ];
 
-    let stored = localStorage.getItem('tneb_asset_data_v4');
+    let stored = localStorage.getItem('tneb_asset_v5');
     let masterData = stored ? JSON.parse(stored) : defaultData;
 
     function persistData() {
-      localStorage.setItem('tneb_asset_data_v4', JSON.stringify(masterData));
+      localStorage.setItem('tneb_asset_v5', JSON.stringify(masterData));
     }
 
-    const map = L.map('map').setView([13.0080, 80.2040], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+    // Initialize Map with fallback coordinates (Chennai center)
+    const map = L.map('map', { zoomControl: true }).setView([13.0080, 80.2040], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Force map to recognize screen dimensions immediately
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 400);
 
     const markerLayer = L.layerGroup().addTo(map);
     const pathLayer = L.layerGroup().addTo(map);
 
-    // TAP ON MAP TO PIN DIRECTLY
+    // Tap map directly to add asset
     map.on('click', function(e) {
       openAddModal();
       document.getElementById('m_lat').value = e.latlng.lat.toFixed(6);
@@ -413,28 +512,4 @@
       document.getElementById('m_branch').value = 'Main';
       document.getElementById('m_ae').value = '';
       document.getElementById('m_mobile').value = '';
-      document.getElementById('m_type').value = 'RMU';
-      document.getElementById('m_name').value = '';
-      document.getElementById('m_seq').value = '1';
-      document.getElementById('m_lat').value = '';
-      document.getElementById('m_lng').value = '';
-      document.getElementById('m_tie_feeder').value = '';
-      document.getElementById('m_tie_ss').value = '';
-      document.getElementById('m_remarks').value = '';
-
-      document.getElementById('assetModal').style.display = 'flex';
-    }
-
-    function closeAssetModal() {
-      document.getElementById('assetModal').style.display = 'none';
-    }
-
-    function fetchCurrentGPS() {
-      if (!navigator.geolocation) {
-        alert("GPS not supported.");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          document.getElementById('m_lat').value = pos.coords.latitude.toFixed(6);
-          document.getElementById('m_lng').value = pos.
+  
