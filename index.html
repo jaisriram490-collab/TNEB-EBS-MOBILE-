@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TNEB Feeder Asset GIS Navigator</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #eef2f5; }
+
+    header {
+      background: #003366;
+      color: #fff;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      z-index: 1001;
+    }
+    header h1 { font-size: 0.95rem; font-weight: 700; }
+    .header-actions { display: flex; gap: 6px; }
+    .btn-hdr {
+      background: #ff9800; border: none; color: #111; font-weight: 700;
+      padding: 5px 9px; border-radius: 4px; cursor: pointer; font-size: 0.72rem;
+    }
+    .btn-hdr:active { transform: scale(0.96); }
+
+    .controls {
+      background: #ffffff;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      border-bottom: 1px solid #dcdcdc;
+      z-index: 1000;
+    }
+    .select-box label {
+      display: block; font-size: 0.68rem; font-weight: 700; color: #555;
+      text-transform: uppercase; margin-bottom: 2px;
+    }
+    select {
+      width: 100%; padding: 6px 8px; font-size: 0.82rem;
+      border: 1px solid #bbb; border-radius: 4px; background: #fdfdfd; outline: none;
+    }
+    select:focus { border-color: #003366; background: #fff; }
+
+    #map { flex: 1; width: 100%; z-index: 1; }
+
+    .legend-bar {
+      position: absolute; bottom: 12px; left: 10px; right: 10px;
+      background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(4px);
+      padding: 7px 10px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      display: flex; justify-content: space-around; font-size: 0.72rem; font-weight: 700;
+      z-index: 1000;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot.rmu { background: #d32f2f; }
+    .dot.rmg { background: #f57c00; }
+    .dot.structure { background: #1976d2; }
+    .dot.tie { background: #ffd700; border: 2px solid #b71c1c; }
+
+    #assetModal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); z-index: 2000;
+      justify-content: center; align-items: center; padding: 12px;
+    }
+    .modal-box {
+      background: #fff; width: 100%; max-width: 420px; max-height: 90vh;
+      overflow-y: auto; padding: 16px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .modal-box h3 { font-size: 1rem; color: #003366; margin-bottom: 8px; }
+    .gps-btn {
+      width: 100%; background: #0288d1; color: white; border: none; font-weight: 700;
+      padding: 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: 0.72rem; font-weight: 800; color: #003366; background: #e3f2fd;
+      padding: 4px 6px; border-radius: 3px; margin: 8px 0 6px 0; text-transform: uppercase;
+    }
+    .form-group { margin-bottom: 6px; }
+    .form-group label { display: block; font-size: 0.68rem; font-weight: 700; color: #444; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 5px 7px; font-size: 0.8rem; border: 1px solid #ccc;
+      border-radius: 4px; margin-top: 2px;
+    }
+    .coords-row { display: flex; gap: 6px; }
+    .coords-row input { flex: 1; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 12px; }
+    .modal-btns button {
+      flex: 1; padding: 8px; border: none; border-radius: 4px; font-weight: 700;
+      font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-save { background: #2e7d32; color: #fff; }
+    .btn-cancel { background: #757575; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>TNEB GIS Navigator</h1>
+    <div class="header-actions">
+      <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
+      <button class="btn-hdr" onclick="document.getElementById('csvFileInput').click()">📁 Import</button>
+      <button class="btn-hdr" onclick="openAddModal()">➕ Add</button>
+      <button class="btn-hdr" onclick="exportCSV()">💾 Export</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="select-box">
+      <label for="ssSelect">Substation (SS)</label>
+      <select id="ssSelect"><option value="">-- Choose Substation --</option></select>
+    </div>
+    <div class="select-box">
+      <label for="feederSelect">Feeder</label>
+      <select id="feederSelect" disabled><option value="">-- Choose Feeder --</option></select>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="legend-bar">
+    <div class="legend-item"><span class="dot rmu"></span> RMU</div>
+    <div class="legend-item"><span class="dot rmg"></span> RMG</div>
+    <div class="legend-item"><span class="dot structure"></span> Structure</div>
+    <div class="legend-item"><span class="dot tie"></span> Tie Point</div>
+  </div>
+
+  <div id="assetModal">
+    <div class="modal-box">
+      <h3 id="modalTitle">Add Network Asset</h3>
+      <input type="hidden" id="edit_index" value="-1" />
+      <button type="button" class="gps-btn" onclick="fetchCurrentGPS()">📍 Auto-Fill Current GPS</button>
+      
+      <div class="section-title">1. Location & Feeder Identification</div>
+      <div class="form-group"><label>Substation Name</label><input type="text" id="m_ss" placeholder="e.g., Guindy 110kV SS" /></div>
+      <div class="form-group"><label>Feeder Name</label><input type="text" id="m_feeder" placeholder="e.g., Industrial Feeder" /></div>
+      <div class="form-group"><label>Branch / Path Name</label><input type="text" id="m_branch" value="Main" placeholder="Main, Branch-1, Spur-A" /></div>
+
+      <div class="section-title">2. In-Charge Responsibility</div>
+      <div class="coords-row">
+        <div class="form-group" style="flex:1;"><label>AE Section</label><input type="text" id="m_ae" placeholder="e.g., AE/O&M/Guindy" /></div>
+        <div class="form-group" style="flex:1;"><label>Mobile / Unit</label><input type="text" id="m_mobile" placeholder="e.g., Unit-1 / FOC South" /></div>
+      </div>
+
+      <div class="section-title">3. Equipment Details & Position</div>
+      <div class="form-group">
+        <label>Asset Type</label>
+        <select id="m_type">
+          <option value="RMU">RMU (Ring Main Unit)</option>
+          <option value="RMG">RMG (Ring Main Gear)</option>
+          <option value="Structure">Structure / DP / DT Pole</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Asset Name / Number</label><input type="text" id="m_name" placeholder="e.g., RMU 04 (Near Post Office)" /></div>
+      <div class="form-group"><label>Sequence Number (e.g. 1, 2, 2.5, 3...)</label><input type="number" step="any" id="m_seq" value="1" /></div>
+      <div class="form-group">
+        <label>Latitude & Longitude</label>
+        <div class="coords-row">
+          <input type="number" step="any" id="m_lat" placeholder="Latitude (13.xxxx)" />
+          <input type="number" step="any" id="m_lng" placeholder="Longitude (80.xxxx)" />
+        </div>
+      </div>
+
+      <div class="section-title">4. Inter-Feeder / Cross Connection</div>
+      <div class="form-group"><label>Connected / Tie Feeder</label><input type="text" id="m_tie_feeder" placeholder="e.g., Race Course Feeder" /></div>
+      <div class="form-group"><label>Connected Feeder's Substation</label><input type="text" id="m_tie_ss" placeholder="e.g., Same SS OR Saidapet 33kV SS" /></div>
+      <div class="form-group"><label>Switch Status / Remarks</label><input type="text" id="m_remarks" placeholder="e.g., Normally Open (N.O.) Tie Point" /></div>
+
+      <div class="modal-btns">
+        <button type="button" class="btn-cancel" onclick="closeAssetModal()">Cancel</button>
+        <button type="button" class="btn-save" id="btnSaveAsset" onclick="saveAsset()">Save Asset</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    const defaultData = [
+      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/O&M/Guindy West", Mobile_Unit: "Mobile-1", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Tie_SS: "", Remarks: "3-Way SF6, Normal Feed" },
+      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/O&M/Guindy West", Mobile_Unit: "Mobile-1", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Tie_SS: "", Remarks: "250kVA DT + HG Fuse" },
+      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/O&M/Saidapet", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Cross Tie Point)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Bazaar Feeder", Tie_SS: "Saidapet 33kV SS", Remarks: "Normally Open (N.O.) Tie Breaker" }
+    ];
+
+    let stored = localStorage.getItem('tneb_asset_data_v3');
+    let masterData = stored ? JSON.parse(stored) : defaultData;
+
+    function persistData() {
+      localStorage.setItem('tneb_asset_data_v3', JSON.stringify(masterData));
+    }
+
+    const map = L.map('map').setView([13.0080, 80.2040], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const markerLayer = L.layerGroup().addTo(map);
+    const pathLayer = L.layerGroup().addTo(map);
+
+    const ssSelect = document.getElementById('ssSelect');
+    const feederSelect = document.getElementById('feederSelect');
+
+    function populateDropdowns() {
+      const currentSS = ssSelect.value;
+      const currentFeeder = feederSelect.value;
+
+      const substations = [...new Set(masterData.map(d => (d.Substation || '').trim()))].filter(Boolean);
+      ssSelect.innerHTML = '<option value="">-- Choose Substation --</option>';
+      substations.forEach(ss => {
+        const opt = document.createElement('option');
+        opt.value = ss;
+        opt.textContent = ss;
+        ssSelect.appendChild(opt);
+      });
+
+      if (currentSS && substations.includes(currentSS)) {
+        ssSelect.value = currentSS;
+        const feeders = [...new Set(
+          masterData.filter(d => (d.Substation || '').trim() === currentSS).map(d => (d.Feeder || '').trim())
+        )].filter(Boolean);
+
+        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
+        feeders.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          feederSelect.appendChild(opt);
+        });
+        feederSelect.disabled = false;
+        if (currentFeeder && feeders.includes(currentFeeder)) {
+          feederSelect.value = currentFeeder;
+        }
+      } else {
+        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
+        feederSelect.disabled = true;
+      }
+    }
+
+    ssSelect.addEventListener('change', function() {
+      const selectedSS = this.value;
+      feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
+      markerLayer.clearLayers();
+      pathLayer.clearLayers();
+
+      if (!selectedSS) {
+        feederSelect.disabled = true;
+        return;
+      }
+
+      const feeders = [...new Set(
+        masterData.filter(d => (d.Substation || '').trim() === selectedSS).map(d => (d.Feeder || '').trim())
+      )].filter(Boolean);
+
+      feeders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f;
+        feederSelect.appendChild(opt);
+      });
+      feederSelect.disabled = false;
+    });
+
+    feederSelect.addEventListener('change', function() {
+      renderFeeder(ssSelect.value, this.value);
+    });
+
+    window.deleteAssetByIndex = function(index) {
+      const target = masterData[index];
+      if (!target) return;
+
+      if (confirm(`Delete ${target.Asset_Type}: "${target.Asset_Name}"?`)) {
+        masterData.splice(index, 1);
+        persistData();
+        populateDropdowns();
+        renderFeeder(ssSelect.value, feederSelect.value);
+      }
+    };
+
+    window.editAssetByIndex = function(index) {
+      const target = masterData[index];
+      if (!target) return;
+
+      document.getElementById('modalTitle').textContent = "Edit Asset Details";
+      document.getElementById('edit_index').value = index;
+      document.getElementById('btnSaveAsset').textContent = "Update Asset";
+
+      document.getElementById('m_ss').value = target.Substation || '';
+      document.getElementById('m_feeder').value = target.Feeder || '';
+      document.getElementById('m_branch').value = target.Branch || 'Main';
+      document.getElementById('m_ae').value = target.AE_Section || '';
+      document.getElementById('m_mobile').value = target.Mobile_Unit || '';
+      document.getElementById('m_type').value = target.Asset_Type || 'RMU';
+      document.getElementById('m_name').value = target.Asset_Name || '';
+      document.getElementById('m_seq').value = target.Sequence_No || 1;
+      document.getElementById('m_lat').value = target.Latitude || '';
+      document.getElementById('m_lng').value = target.Longitude || '';
+      document.getElementById('m_tie_feeder').value = target.Tie_Feeder || '';
+      document.getElementById('m_tie_ss').value = target.Tie_SS || '';
+      document.getElementById('m_remarks').value = target.Remarks || '';
+
+      document.getElementById('assetModal').style.display = 'flex';
+    };
+
+    function renderFeeder(ssName, feederName) {
+      markerLayer.clearLayers();
+      pathLayer.clearLayers();
+
+      if (!feederName) return;
+
+      const matchedAssets = [];
+      masterData.forEach((item, originalIndex) => {
+        if ((item.Substation || '').trim() === ssName && (item.Feeder || '').trim() === feederName) {
+          matchedAssets.push({ ...item, _masterIndex: originalIndex });
+        }
+      });
+
+      matchedAssets.sort((a, b) => parseFloat(a.Sequence_No) - parseFloat(b.Sequence_No));
+
+      if (matchedAssets.length === 0) return;
+
+      const bounds = [];
+
+      matchedAssets.forEach(item => {
+        const lat = parseFloat(item.Latitude);
+        const lng = parseFloat(item.Longitude);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        let color = '#1976d2';
+        const typeUpper = (item.Asset_Type || '').toUpperCase();
+        if (typeUpper === 'RMU') color = '#d32f2f';
+        else if (typeUpper === 'RMG') color = '#f57c00';
+
+        const hasTie = item.Tie_Feeder && item.Tie_Feeder.trim().length > 0;
+
+        const marker = L.circleMarker([lat, lng], {
+          radius: hasTie ? 11 : 9,
+          fillColor: color,
+          color: hasTie ? '#ffd700' : '#ffffff',
+          weight: hasTie ? 3.5 : 2,
+          fillOpacity: 0.95
+        });
+
+        const tieBoxHtml = hasTie ? `
+          <div style="background:#fff3e0; border-left:3px solid #ff9800; padding:4px 6px; margin:5px 0; font-size:11px;">
+            <b style="color:#e65100;">⚡ INTER-FEEDER TIE POINT</b><br/>
+            <b>Connects to:</b> ${item.Tie_Feeder}<br/>
+            <b>Target SS:</b> ${item.Tie_SS || 'Same SS'}
+          </div>` : '';
+
+        marker.bindPopup(`
+          <div style="font-size:12px; line-height:1.4; min-width: 220px;">
+            <b style="color:${color}; font-size:13px;">[${item.Asset_Type}] ${item.Asset_Name}</b><br/>
+            <b>Path:</b> ${item.Branch || 'Main'} | <b>Seq:</b> #${item.Sequence_No}<br/>
+            <b>AE Section:</b> ${item.AE_Section || 'N/A'}<br/>
+            <b>Mobile Unit:</b> ${item.Mobile_Unit || 'N/A'}<br/>
+            ${tieBoxHtml}
+            <b>Status/Remarks:</b> ${item.Remarks || 'N/A'}<br/>
+            <b>GPS:</b> ${lat.toFixed(5)}, ${lng.toFixed(5)}<br/>
+            <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank"
+                 style="color:#fff; background:#0056b3; padding:4px 7px; border-radius:3px; text-decoration:none; display:inline-block; font-size:11px; font-weight:bold;">
+                Map ↗
+              </a>
+              <button onclick="editAssetByIndex(${item._masterIndex})"
+                      style="color:#fff; background:#f57c00; border:none; padding:4px 7px; border-radius:3px; font-size:11px; font-weight:bold; cursor:pointer;">
+                ✏️ Edit
+              </button>
+              <button onclick="deleteAssetByIndex(${item._masterIndex})"
+                      style="color:#fff; background:#c62828; border:none; padding:4px 7px; border-radius:3px; font-size:11px; font-weight:bold; cursor:pointer;">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        `);
+
+        markerLayer.addLayer(marker);
+        bounds.push([lat, lng]);
+      });
+
+      const branches = [...new Set(matchedAssets.map(d => (d.Branch || 'Main').trim()))];
+      const mainAssets = matchedAssets.filter(d => (d.Branch || 'Main').trim().toLowerCase() === 'main');
+      const junctionAsset = mainAssets.length > 0 ? mainAssets[mainAssets.length - 1] : null;
+
+      branches.forEach(branch => {
+        const branchAssets = matchedAssets.filter(d => (d.Branch || 'Main').trim() === branch);
+        const pathCoords = [];
+
+        if (branch.toLowerCase() !== 'main' && junctionAsset) {
+          pathCoords.push([parseFloat(junctionAsset.Latitude), parseFloat(junctionAsset.Longitude)]);
+        }
+
+        branchAssets.forEach(a => {
+          pathCoords.push([parseFloat(a.Latitude), parseFloat(a.Longitude)]);
+        });
+
+        if (pathCoords.length > 1) {
+          const isMain = branch.toLowerCase() === 'main';
+          const polyline = L.polyline(pathCoords, {
+            color: isMain ? '#003366' : '#7b1fa2',
+            weight: 3.5,
+            dashArray: isMain ? null : '6, 6',
+            opacity: 0.8
+          });
+          pathLayer.addLayer(polyline);
+        }
+      });
+
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = "Add Network Asset";
+      document.getElementById('edit_index').value = "-1";
+      document.getElementById('btnSaveAsset').textContent = "Save Asset";
+
+      document.getElementById('m_ss').value = ssSelect.value || '';
+      document.getElementById('m_feeder').value = feederSelect.value || '';
+      document.getElementById('m_branch').value = 'Main';
+      document.getElementById('m_ae').value = '';
+      document.getElementById('m_mobile').value = '';
+      document.getElementById('m_type').value = 'RMU';
+      document.getElementById('m_name').value = '';
+      document.getElementById('m_seq').value = '1';
+      document.getElementById('m_lat').value = '';
+      document.getElementById('m_lng').value = '';
+      document.getElementById('m_tie_feeder').value = '';
+      document.getElementById('m_tie_ss').value = '';
+      document.getElementById('m_remarks').value = '';
+
+      document.getElementById('assetModal').style.display = 'flex';
+    }
+
+    function closeAssetModal() {
+      document.getElementById('assetModal').style.display = 'none';
+    }
+
+    function fetchCurrentGPS() {
+      if (!navigator.geolocation) {
+        alert("GPS is not supported.");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          document.getElementById('m_la
