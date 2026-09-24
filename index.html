@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>TNEB Feeder Asset GIS Navigator</title>
 
-  <!-- Leaflet CSS via Cloudflare CDN (Strict HTTPS) -->
+  <!-- Leaflet CSS via Cloudflare CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous" />
 
   <style>
@@ -61,13 +61,19 @@
       border: 1px solid #aaa; border-radius: 4px; background: #fff; outline: none;
     }
 
-    /* Map takes exactly 100% of the remaining vertical space */
+    /* Fixed Height for Map Container on Mobile */
     #map {
       flex: 1 1 auto;
       width: 100%;
       height: calc(100vh - 110px);
-      background: #d4dadc;
+      background: #f2efe9;
       z-index: 1;
+    }
+
+    /* Fixes blur on high-resolution smartphone screens */
+    .leaflet-tile {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
 
     .legend-bar {
@@ -189,7 +195,7 @@
     </div>
   </div>
 
-  <!-- Leaflet Script via Cloudflare CDN (Strict HTTPS) -->
+  <!-- Leaflet Script via Cloudflare CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
 
   <script>
@@ -200,26 +206,27 @@
       { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Tie)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Race Course Feeder", Remarks: "Tie Switch" }
     ];
 
-    let stored = localStorage.getItem('tneb_asset_v6');
+    let stored = localStorage.getItem('tneb_asset_v7');
     let masterData = stored ? JSON.parse(stored) : defaultData;
 
     function persistData() {
-      localStorage.setItem('tneb_asset_v6', JSON.stringify(masterData));
+      localStorage.setItem('tneb_asset_v7', JSON.stringify(masterData));
     }
 
-    // Initialize Map with fallback to Chennai
+    // Initialize Map with zoom settings
     const map = L.map('map', {
       zoomControl: true,
-      fadeAnimation: false
-    }).setView([13.0080, 80.2040], 14);
+      fadeAnimation: false,
+      zoomSnap: 0.5
+    }).setView([13.0080, 80.2040], 15);
 
-    // Using CartoDB Positron - 100% reliable, fast, zero mixed-content blocks on HTTPS
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // High-Resolution Crisp Mobile Tile Layer
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '© OpenStreetMap, © CARTO'
+      detectRetina: true,
+      attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Forces Leaflet to adapt to screen size on mobile launch
     window.addEventListener('load', () => {
       setTimeout(() => { map.invalidateSize(); }, 300);
       setTimeout(() => { map.invalidateSize(); }, 800);
@@ -437,4 +444,3 @@
   </script>
 </body>
 </html>
-
