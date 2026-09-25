@@ -3,121 +3,111 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>TNEB Feeder Asset GIS Navigator</title>
+  <title>TNEB Distribution Network GIS</title>
 
-  <!-- Leaflet CSS via Cloudflare CDN -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous" />
-  <!-- CSV Parser Script -->
+  <!-- PapaParse for CSV Export/Import -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <!-- Firebase Realtime App & Database SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; }
 
-    #app-container {
-      display: flex;
-      flex-direction: column;
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-    }
+    #app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; position: relative; }
 
     header {
-      background: #003366;
-      color: #fff;
-      padding: 10px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      height: 52px;
-      flex-shrink: 0;
-      z-index: 1000;
+      background: #003366; color: #fff; padding: 8px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      height: 50px; flex-shrink: 0; z-index: 1000;
     }
-
-    header h1 { font-size: 0.90rem; font-weight: bold; }
+    header h1 { font-size: 0.90rem; font-weight: 700; letter-spacing: 0.5px; }
     .header-actions { display: flex; gap: 5px; }
     .btn-hdr {
-      background: #ff9800; border: none; color: #111; font-weight: bold;
+      background: #ff9800; border: none; color: #111; font-weight: 700;
       padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem;
     }
+    .btn-hdr:active { transform: scale(0.96); }
 
-    .controls {
-      background: #ffffff;
-      padding: 8px 12px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      height: 58px;
-      border-bottom: 1px solid #ccc;
-      flex-shrink: 0;
-      z-index: 1000;
+    .controls-grid {
+      background: #ffffff; padding: 8px 10px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+      border-bottom: 1px solid #dcdcdc; flex-shrink: 0; z-index: 1000;
     }
-
-    .select-box label {
-      display: block; font-size: 0.65rem; font-weight: bold; color: #555;
+    .control-item label {
+      display: block; font-size: 0.62rem; font-weight: 800; color: #555;
       text-transform: uppercase; margin-bottom: 2px;
     }
-
-    select {
-      width: 100%; padding: 5px; font-size: 0.82rem;
+    select, input[type="text"] {
+      width: 100%; padding: 6px 4px; font-size: 0.78rem;
       border: 1px solid #aaa; border-radius: 4px; background: #fff; outline: none;
     }
 
-    /* Fixed Height for Map Container on Mobile */
-    #map {
-      flex: 1 1 auto;
-      width: 100%;
-      height: calc(100vh - 110px);
-      background: #f2efe9;
-      z-index: 1;
+    .search-bar-container {
+      background: #f8f9fa; padding: 4px 10px; border-bottom: 1px solid #e0e0e0;
+      display: flex; gap: 6px; align-items: center; flex-shrink: 0; z-index: 1000;
+    }
+    .search-bar-container input {
+      flex: 1; padding: 5px 8px; font-size: 0.75rem; border: 1px solid #ccc; border-radius: 4px;
     }
 
-    /* Fixes blur on high-resolution smartphone screens */
-    .leaflet-tile {
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: crisp-edges;
+    #map {
+      flex: 1 1 auto; width: 100%; height: 100%; background: #e5e3df; z-index: 1;
+    }
+    .leaflet-tile { image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; }
+
+    .pin-toggle-btn {
+      position: absolute; top: 125px; right: 12px; z-index: 999;
+      background: #ffffff; border: 2px solid #003366; color: #003366;
+      font-weight: 800; font-size: 0.75rem; padding: 8px 12px; border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; gap: 4px;
+    }
+    .pin-toggle-btn.active {
+      background: #d32f2f; color: #ffffff; border-color: #d32f2f;
     }
 
     .legend-bar {
-      position: absolute; bottom: 12px; left: 10px; right: 10px;
-      background: rgba(255, 255, 255, 0.95); padding: 7px 10px; border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; justify-content: space-around;
-      font-size: 0.72rem; font-weight: bold; z-index: 999;
+      position: absolute; bottom: 10px; left: 8px; right: 8px;
+      background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(4px);
+      padding: 6px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      display: flex; justify-content: space-around; font-size: 0.68rem; font-weight: 700; z-index: 999;
     }
     .legend-item { display: flex; align-items: center; gap: 4px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
     .dot.rmu { background: #d32f2f; }
     .dot.rmg { background: #f57c00; }
     .dot.structure { background: #1976d2; }
     .dot.tie { background: #ffd700; border: 2px solid #b71c1c; }
 
-    /* Modal Form Overlay */
     #assetModal {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.7); z-index: 999999;
-      justify-content: center; align-items: center; padding: 12px;
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      z-index: 99999; justify-content: center; align-items: center; padding: 12px;
     }
     .modal-box {
-      background: #fff; width: 100%; max-width: 400px; max-height: 85vh;
+      background: #fff; width: 100%; max-width: 430px; max-height: 90vh;
       overflow-y: auto; padding: 14px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
     .modal-box h3 { font-size: 0.95rem; color: #003366; margin-bottom: 8px; }
     .gps-btn {
-      width: 100%; background: #0288d1; color: white; border: none; font-weight: bold;
-      padding: 9px; border-radius: 4px; font-size: 0.78rem; cursor: pointer; margin-bottom: 8px;
+      width: 100%; background: #0288d1; color: white; border: none; font-weight: 700;
+      padding: 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; margin-bottom: 8px;
     }
-    .form-group { margin-bottom: 6px; }
-    .form-group label { display: block; font-size: 0.68rem; font-weight: bold; color: #444; }
-    .form-group input, .form-group select {
-      width: 100%; padding: 6px; font-size: 0.8rem; border: 1px solid #ccc;
-      border-radius: 4px; margin-top: 2px;
+    .section-title {
+      font-size: 0.68rem; font-weight: 800; color: #003366; background: #e3f2fd;
+      padding: 3px 6px; border-radius: 3px; margin: 6px 0 4px 0; text-transform: uppercase;
     }
+    .form-group { margin-bottom: 5px; }
+    .form-group label { display: block; font-size: 0.65rem; font-weight: 700; color: #444; }
     .coords-row { display: flex; gap: 6px; }
     .coords-row input { flex: 1; }
     .modal-btns { display: flex; gap: 8px; margin-top: 12px; }
     .modal-btns button {
-      flex: 1; padding: 9px; border: none; border-radius: 4px; font-weight: bold;
-      font-size: 0.85rem; cursor: pointer;
+      flex: 1; padding: 9px; border: none; border-radius: 4px; font-weight: 700;
+      font-size: 0.8rem; cursor: pointer;
     }
     .btn-save { background: #2e7d32; color: #fff; }
     .btn-cancel { background: #757575; color: #fff; }
@@ -127,9 +117,8 @@
 
   <div id="app-container">
     <header>
-      <h1>TNEB GIS</h1>
+      <h1>TNEB GIS Navigator</h1>
       <div class="header-actions">
-        <!-- Hidden CSV File Input -->
         <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
         <button class="btn-hdr" onclick="document.getElementById('csvFileInput').click()">📁 Import</button>
         <button class="btn-hdr" onclick="openAddModal()">➕ Add</button>
@@ -137,19 +126,30 @@
       </div>
     </header>
 
-    <div class="controls">
-      <div class="select-box">
-        <label for="ssSelect">Substation (SS)</label>
-        <select id="ssSelect"><option value="">-- Substation --</option></select>
+    <div class="controls-grid">
+      <div class="control-item">
+        <label for="mobileSelect">Mobile Unit</label>
+        <select id="mobileSelect"><option value="">-- All Units --</option></select>
       </div>
-      <div class="select-box">
+      <div class="control-item">
+        <label for="ssSelect">Substation (SS)</label>
+        <select id="ssSelect"><option value="">-- Choose SS --</option></select>
+      </div>
+      <div class="control-item">
         <label for="feederSelect">Feeder</label>
-        <select id="feederSelect" disabled><option value="">-- Feeder --</option></select>
+        <select id="feederSelect" disabled><option value="">-- Choose Feeder --</option></select>
       </div>
     </div>
 
-    <!-- Map container -->
+    <div class="search-bar-container">
+      <input type="text" id="quickSearchInput" placeholder="🔍 Search SS or Feeder name..." oninput="handleQuickSearch(this.value)" />
+    </div>
+
     <div id="map"></div>
+
+    <button class="pin-toggle-btn" id="pinToggleBtn" onclick="togglePinMode()">
+      <span>📍 Pin on Map: OFF</span>
+    </button>
 
     <div class="legend-bar">
       <div class="legend-item"><span class="dot rmu"></span> RMU</div>
@@ -159,69 +159,98 @@
     </div>
   </div>
 
-  <!-- Form Modal -->
   <div id="assetModal">
     <div class="modal-box">
       <h3 id="modalTitle">Add Network Asset</h3>
-      <input type="hidden" id="edit_index" value="-1" />
-      <button type="button" class="gps-btn" onclick="fetchCurrentGPS()">📍 Get Current Location (GPS)</button>
+      <input type="hidden" id="edit_id" value="" />
+      <button type="button" class="gps-btn" onclick="fetchCurrentGPS()">📍 Auto-Fill Current GPS</button>
 
-      <div class="form-group"><label>Substation Name *</label><input type="text" id="m_ss" placeholder="Guindy 110kV SS" /></div>
-      <div class="form-group"><label>Feeder Name *</label><input type="text" id="m_feeder" placeholder="Industrial Feeder" /></div>
-      <div class="form-group"><label>Branch / Path</label><input type="text" id="m_branch" value="Main" /></div>
+      <div class="section-title">1. Administrative & Section In-Charge</div>
       <div class="coords-row">
-        <div class="form-group" style="flex:1;"><label>AE Section</label><input type="text" id="m_ae" placeholder="AE/Guindy" /></div>
-        <div class="form-group" style="flex:1;"><label>Mobile Unit</label><input type="text" id="m_mobile" placeholder="Mobile-1" /></div>
+        <div class="form-group" style="flex:1;">
+          <label>Mobile Unit (Optional)</label>
+          <input type="text" id="m_mobile" placeholder="e.g., Mobile-1" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>AE Section</label>
+          <input type="text" id="m_ae" placeholder="e.g., AE/Guindy" />
+        </div>
       </div>
+
+      <div class="section-title">2. Substation & Feeder Info</div>
+      <div class="form-group"><label>Substation (SS) Name *</label><input type="text" id="m_ss" placeholder="Guindy 110kV SS" /></div>
+      <div class="form-group"><label>Feeder Name *</label><input type="text" id="m_feeder" placeholder="Industrial Feeder" /></div>
+
+      <div class="section-title">3. Routing Hierarchy (Main, Branch, Sub-Branch)</div>
+      <div class="coords-row">
+        <div class="form-group" style="flex:1;">
+          <label>Branch / Path Name</label>
+          <input type="text" id="m_branch" value="Main" placeholder="Main, Branch-1, Spur-A" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Sub-Branch (Optional)</label>
+          <input type="text" id="m_subbranch" placeholder="Sub-1, Tap-A" />
+        </div>
+      </div>
+
+      <div class="section-title">4. Equipment Specs & Position</div>
       <div class="form-group">
         <label>Asset Type *</label>
         <select id="m_type">
-          <option value="RMU">RMU</option>
-          <option value="RMG">RMG</option>
-          <option value="Structure">Structure / DP</option>
+          <option value="RMU">RMU (Ring Main Unit)</option>
+          <option value="RMG">RMG (Ring Main Gear)</option>
+          <option value="Structure">Structure / DP / DT Pole</option>
         </select>
       </div>
-      <div class="form-group"><label>Asset Name *</label><input type="text" id="m_name" placeholder="RMU 01" /></div>
-      <div class="form-group"><label>Sequence Number</label><input type="number" step="any" id="m_seq" value="1" /></div>
+      <div class="form-group"><label>Asset Name / Number *</label><input type="text" id="m_name" placeholder="RMU 04" /></div>
+      <div class="form-group"><label>Sequence Number (e.g. 1, 2, 2.5, 3...)</label><input type="number" step="any" id="m_seq" value="1" /></div>
       <div class="form-group">
-        <label>Coordinates (Lat, Lng) *</label>
+        <label>Coordinates (Latitude, Longitude) *</label>
         <div class="coords-row">
           <input type="number" step="any" id="m_lat" placeholder="13.0080" />
           <input type="number" step="any" id="m_lng" placeholder="80.2040" />
         </div>
       </div>
-      <div class="form-group"><label>Tie Feeder (Optional)</label><input type="text" id="m_tie_feeder" placeholder="Leave empty if internal" /></div>
-      <div class="form-group"><label>Remarks</label><input type="text" id="m_remarks" placeholder="3-Way SF6" /></div>
+
+      <div class="section-title">5. Inter-Feeder Tie Information</div>
+      <div class="coords-row">
+        <div class="form-group" style="flex:1;"><label>Tie Feeder</label><input type="text" id="m_tie_feeder" placeholder="Race Course Feeder" /></div>
+        <div class="form-group" style="flex:1;"><label>Tie Substation</label><input type="text" id="m_tie_ss" placeholder="Saidapet 33kV SS" /></div>
+      </div>
+      <div class="form-group"><label>Remarks / Status</label><input type="text" id="m_remarks" placeholder="3-Way SF6, N.O. switch" /></div>
 
       <div class="modal-btns">
         <button type="button" class="btn-cancel" onclick="closeAssetModal()">Cancel</button>
-        <button type="button" class="btn-save" id="btnSaveAsset" onclick="saveAsset()">Save</button>
+        <button type="button" class="btn-save" id="btnSaveAsset" onclick="saveAsset()">Save to Cloud</button>
       </div>
     </div>
   </div>
 
-  <!-- Leaflet Script via Cloudflare CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
 
   <script>
-    const defaultData = [
-      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "RMU", Asset_Name: "RMU 01", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Remarks: "3-Way SF6" },
-      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "Structure", Asset_Name: "DP 01", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Remarks: "250kVA DT" },
-      { Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Tie)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Race Course Feeder", Remarks: "Tie Switch" }
-    ];
+    // Configured directly with your project endpoint in Singapore region
+    const firebaseConfig = {
+      databaseURL: "https://tneb-gis-70e97-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
 
-    let stored = localStorage.getItem('tneb_asset_v8');
-    let masterData = stored ? JSON.parse(stored) : defaultData;
+    let db = null;
+    let masterData = [];
 
-    function persistData() {
-      localStorage.setItem('tneb_asset_v8', JSON.stringify(masterData));
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+    } catch(err) {
+      console.warn("Firebase initialization issue:", err);
     }
 
-    const map = L.map('map', {
-      zoomControl: true,
-      fadeAnimation: false,
-      zoomSnap: 0.5
-    }).setView([13.0080, 80.2040], 15);
+    const seedData = [
+      { id: "ast_1", Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Tie_SS: "", Remarks: "3-Way SF6" },
+      { id: "ast_2", Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Tie_SS: "", Remarks: "250kVA DT" },
+      { id: "ast_3", Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Branch-1", SubBranch: "Sub-A", AE_Section: "AE/Saidapet", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Cross Tie)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Bazaar Feeder", Tie_SS: "Saidapet 33kV SS", Remarks: "N.O. Tie Switch" }
+    ];
+
+    const map = L.map('map', { zoomControl: true, fadeAnimation: false }).setView([13.0080, 80.2040], 14);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -230,79 +259,186 @@
     }).addTo(map);
 
     window.addEventListener('load', () => {
-      setTimeout(() => { map.invalidateSize(); }, 300);
-      setTimeout(() => { map.invalidateSize(); }, 800);
+      setTimeout(() => map.invalidateSize(), 300);
+      setTimeout(() => map.invalidateSize(), 800);
     });
 
     const markerLayer = L.layerGroup().addTo(map);
     const pathLayer = L.layerGroup().addTo(map);
 
+    let isPinModeActive = false;
+    let touchTimer = null;
+
+    function togglePinMode() {
+      isPinModeActive = !isPinModeActive;
+      const btn = document.getElementById('pinToggleBtn');
+      if (isPinModeActive) {
+        btn.classList.add('active');
+        btn.innerHTML = '<span>📍 Tap Map to Pin: ON</span>';
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<span>📍 Pin on Map: OFF</span>';
+      }
+    }
+
     map.on('click', function(e) {
+      if (!isPinModeActive) return;
       openAddModal();
       document.getElementById('m_lat').value = e.latlng.lat.toFixed(6);
       document.getElementById('m_lng').value = e.latlng.lng.toFixed(6);
+      togglePinMode();
     });
 
+    map.on('mousedown', function(e) {
+      touchTimer = setTimeout(() => {
+        openAddModal();
+        document.getElementById('m_lat').value = e.latlng.lat.toFixed(6);
+        document.getElementById('m_lng').value = e.latlng.lng.toFixed(6);
+      }, 800);
+    });
+    map.on('mouseup mousemove zoomstart', function() {
+      if (touchTimer) clearTimeout(touchTimer);
+    });
+
+    function listenToCloud() {
+      if (!db) {
+        masterData = JSON.parse(localStorage.getItem('tneb_asset_v10')) || seedData;
+        populateDropdowns();
+        return;
+      }
+
+      db.ref("tneb_network_assets").on("value", snapshot => {
+        const val = snapshot.val();
+        if (val) {
+          masterData = Object.keys(val).map(key => ({ ...val[key], id: key }));
+        } else {
+          seedData.forEach(item => db.ref("tneb_network_assets").push(item));
+          masterData = seedData;
+        }
+        localStorage.setItem('tneb_asset_v10', JSON.stringify(masterData));
+        populateDropdowns();
+        renderActiveFeeder();
+      });
+    }
+
+    const mobileSelect = document.getElementById('mobileSelect');
     const ssSelect = document.getElementById('ssSelect');
     const feederSelect = document.getElementById('feederSelect');
 
     function populateDropdowns() {
-      const substations = [...new Set(masterData.map(d => (d.Substation || '').trim()))].filter(Boolean);
-      ssSelect.innerHTML = '<option value="">-- Substation --</option>';
-      substations.forEach(ss => {
+      const selectedMobile = mobileSelect.value;
+      const selectedSS = ssSelect.value;
+      const selectedFeeder = feederSelect.value;
+
+      const mobiles = [...new Set(masterData.map(d => (d.Mobile_Unit || '').trim()))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+
+      mobileSelect.innerHTML = '<option value="">-- All Units --</option>';
+      mobiles.forEach(m => {
         const opt = document.createElement('option');
-        opt.value = ss;
-        opt.textContent = ss;
+        opt.value = m; opt.textContent = m;
+        mobileSelect.appendChild(opt);
+      });
+      mobileSelect.value = selectedMobile;
+
+      let filteredForSS = masterData;
+      if (selectedMobile) {
+        filteredForSS = masterData.filter(d => (d.Mobile_Unit || '').trim() === selectedMobile);
+      }
+      const substations = [...new Set(filteredForSS.map(d => (d.Substation || '').trim()))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+
+      ssSelect.innerHTML = '<option value="">-- Choose SS --</option>';
+      substations.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s; opt.textContent = s;
         ssSelect.appendChild(opt);
       });
-      feederSelect.innerHTML = '<option value="">-- Feeder --</option>';
-      feederSelect.disabled = true;
+
+      if (selectedSS && substations.includes(selectedSS)) {
+        ssSelect.value = selectedSS;
+        populateFeeders(selectedSS, selectedFeeder);
+      } else {
+        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
+        feederSelect.disabled = true;
+      }
     }
 
-    ssSelect.addEventListener('change', function() {
-      const selectedSS = this.value;
-      feederSelect.innerHTML = '<option value="">-- Feeder --</option>';
-      markerLayer.clearLayers();
-      pathLayer.clearLayers();
+    mobileSelect.addEventListener('change', () => {
+      populateDropdowns();
+      renderActiveFeeder();
+    });
 
-      if (!selectedSS) {
+    ssSelect.addEventListener('change', function() {
+      populateFeeders(this.value, "");
+      renderActiveFeeder();
+    });
+
+    function populateFeeders(ssName, keepFeeder) {
+      if (!ssName) {
+        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
         feederSelect.disabled = true;
         return;
       }
 
-      const feeders = [...new Set(masterData.filter(d => (d.Substation || '').trim() === selectedSS).map(d => (d.Feeder || '').trim()))].filter(Boolean);
+      const feeders = [...new Set(
+        masterData.filter(d => (d.Substation || '').trim() === ssName).map(d => (d.Feeder || '').trim())
+      )].filter(Boolean).sort((a, b) => a.localeCompare(b));
+
+      feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
       feeders.forEach(f => {
         const opt = document.createElement('option');
-        opt.value = f;
-        opt.textContent = f;
+        opt.value = f; opt.textContent = f;
         feederSelect.appendChild(opt);
       });
       feederSelect.disabled = false;
-    });
+      if (keepFeeder && feeders.includes(keepFeeder)) {
+        feederSelect.value = keepFeeder;
+      }
+    }
 
-    feederSelect.addEventListener('change', function() {
-      renderFeeder(ssSelect.value, this.value);
-    });
+    feederSelect.addEventListener('change', () => renderActiveFeeder());
+
+    function renderActiveFeeder() {
+      renderFeeder(ssSelect.value, feederSelect.value);
+    }
+
+    function handleQuickSearch(query) {
+      if (!query || query.length < 2) return;
+      const q = query.toLowerCase();
+
+      const matched = masterData.find(d => 
+        (d.Substation && d.Substation.toLowerCase().includes(q)) ||
+        (d.Feeder && d.Feeder.toLowerCase().includes(q))
+      );
+
+      if (matched) {
+        if (matched.Mobile_Unit) mobileSelect.value = matched.Mobile_Unit;
+        populateDropdowns();
+        ssSelect.value = matched.Substation;
+        populateFeeders(matched.Substation, matched.Feeder);
+        feederSelect.value = matched.Feeder;
+        renderActiveFeeder();
+      }
+    }
 
     function renderFeeder(ssName, feederName) {
       markerLayer.clearLayers();
       pathLayer.clearLayers();
-      if (!feederName) return;
 
-      const matchedAssets = [];
-      masterData.forEach((item, originalIndex) => {
-        if ((item.Substation || '').trim() === ssName && (item.Feeder || '').trim() === feederName) {
-          matchedAssets.push({ ...item, _masterIndex: originalIndex });
-        }
-      });
+      if (!ssName || !feederName) return;
 
-      matchedAssets.sort((a, b) => parseFloat(a.Sequence_No) - parseFloat(b.Sequence_No));
-      if (matchedAssets.length === 0) return;
+      const assets = masterData
+        .filter(d => (d.Substation || '').trim() === ssName && (d.Feeder || '').trim() === feederName)
+        .sort((a, b) => parseFloat(a.Sequence_No) - parseFloat(b.Sequence_No));
+
+      if (assets.length === 0) return;
 
       const bounds = [];
-      const pathCoords = [];
 
-      matchedAssets.forEach(item => {
+      assets.forEach(item => {
         const lat = parseFloat(item.Latitude);
         const lng = parseFloat(item.Longitude);
         if (isNaN(lat) || isNaN(lng)) return;
@@ -318,152 +454,23 @@
           radius: hasTie ? 11 : 9,
           fillColor: color,
           color: hasTie ? '#ffd700' : '#ffffff',
-          weight: hasTie ? 3 : 2,
+          weight: hasTie ? 3.5 : 2,
           fillOpacity: 0.95
         });
 
+        const tieBoxHtml = hasTie ? `
+          <div style="background:#fff3e0; border-left:3px solid #ff9800; padding:4px 6px; margin:5px 0; font-size:11px;">
+            <b style="color:#e65100;">⚡ TIE POINT</b><br/>
+            <b>To Feeder:</b> ${item.Tie_Feeder}<br/>
+            <b>Target SS:</b> ${item.Tie_SS || 'Same SS'}
+          </div>` : '';
+
         marker.bindPopup(`
-          <div style="font-size:12px; line-height:1.4;">
+          <div style="font-size:12px; line-height:1.4; min-width: 210px;">
             <b style="color:${color}; font-size:13px;">[${item.Asset_Type}] ${item.Asset_Name}</b><br/>
-            <b>AE:</b> ${item.AE_Section || 'N/A'} | <b>Mobile:</b> ${item.Mobile_Unit || 'N/A'}<br/>
-            ${hasTie ? `<b style="color:orange;">Tie to: ${item.Tie_Feeder}</b><br/>` : ''}
-            <b>GPS:</b> ${lat.toFixed(5)}, ${lng.toFixed(5)}<br/>
-            <button onclick="deleteAsset(${item._masterIndex})" style="color:white; background:#c62828; border:none; padding:3px 6px; border-radius:3px; margin-top:5px; cursor:pointer;">Delete</button>
-          </div>
-        `);
-
-        markerLayer.addLayer(marker);
-        bounds.push([lat, lng]);
-        pathCoords.push([lat, lng]);
-      });
-
-      if (pathCoords.length > 1) {
-        pathLayer.addLayer(L.polyline(pathCoords, { color: '#003366', weight: 3 }));
-      }
-
-      if (bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-      }
-    }
-
-    function openAddModal() {
-      document.getElementById('assetModal').style.display = 'flex';
-      if (ssSelect.value) document.getElementById('m_ss').value = ssSelect.value;
-      if (feederSelect.value) document.getElementById('m_feeder').value = feederSelect.value;
-    }
-
-    function closeAssetModal() {
-      document.getElementById('assetModal').style.display = 'none';
-    }
-
-    function fetchCurrentGPS() {
-      if (!navigator.geolocation) {
-        alert("GPS not supported.");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          document.getElementById('m_lat').value = pos.coords.latitude.toFixed(6);
-          document.getElementById('m_lng').value = pos.coords.longitude.toFixed(6);
-          alert("GPS Location Saved!");
-        },
-        err => alert("GPS Permission Denied. Please enable GPS in Android settings.")
-      );
-    }
-
-    function saveAsset() {
-      const ss = document.getElementById('m_ss').value.trim();
-      const feeder = document.getElementById('m_feeder').value.trim();
-      const branch = document.getElementById('m_branch').value.trim() || 'Main';
-      const ae = document.getElementById('m_ae').value.trim();
-      const mobile = document.getElementById('m_mobile').value.trim();
-      const type = document.getElementById('m_type').value;
-      const name = document.getElementById('m_name').value.trim();
-      const seq = parseFloat(document.getElementById('m_seq').value) || 1;
-      const lat = parseFloat(document.getElementById('m_lat').value);
-      const lng = parseFloat(document.getElementById('m_lng').value);
-      const tieFeeder = document.getElementById('m_tie_feeder').value.trim();
-      const remarks = document.getElementById('m_remarks').value.trim();
-
-      if (!ss || !feeder || !name) {
-        alert("Please enter Substation, Feeder, and Asset Name.");
-        return;
-      }
-      if (isNaN(lat) || isNaN(lng)) {
-        alert("Coordinates missing! Click on the map or tap Get Location.");
-        return;
-      }
-
-      masterData.push({
-        Substation: ss, Feeder: feeder, Branch: branch, AE_Section: ae,
-        Mobile_Unit: mobile, Asset_Type: type, Asset_Name: name,
-        Sequence_No: seq, Latitude: lat, Longitude: lng, Tie_Feeder: tieFeeder, Remarks: remarks
-      });
-
-      persistData();
-      closeAssetModal();
-      populateDropdowns();
-
-      ssSelect.value = ss;
-      ssSelect.dispatchEvent(new Event('change'));
-      feederSelect.value = feeder;
-      renderFeeder(ss, feeder);
-    }
-
-    window.deleteAsset = function(index) {
-      if (confirm("Delete this asset?")) {
-        masterData.splice(index, 1);
-        persistData();
-        populateDropdowns();
-        renderFeeder(ssSelect.value, feederSelect.value);
-      }
-    };
-
-    // CSV File Import Handler
-    document.getElementById('csvFileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          if (results.data && results.data.length > 0) {
-            masterData = results.data;
-            persistData();
-            populateDropdowns();
-            alert(`Imported ${masterData.length} network records successfully!`);
-          } else {
-            alert("No valid rows found in CSV file.");
-          }
-        }
-      });
-    });
-
-    // CSV File Export Handler
-    function exportCSV() {
-      let csv = "Substation,Feeder,Branch,AE_Section,Mobile_Unit,Asset_Type,Asset_Name,Sequence_No,Latitude,Longitude,Tie_Feeder,Remarks\n";
-      masterData.forEach(d => {
-        csv += `"${d.Substation}","${d.Feeder}","${d.Branch || ''}","${d.AE_Section || ''}","${d.Mobile_Unit || ''}","${d.Asset_Type}","${d.Asset_Name}",${d.Sequence_No},${d.Latitude},${d.Longitude},"${d.Tie_Feeder || ''}","${d.Remarks || ''}"\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "tneb_assets.csv";
-      a.click();
-    }
-
-    populateDropdowns();
-
-    // Auto-select initial sample
-    if (ssSelect.options.length > 1) {
-      ssSelect.selectedIndex = 1;
-      ssSelect.dispatchEvent(new Event('change'));
-      if (feederSelect.options.length > 1) {
-        feederSelect.selectedIndex = 1;
-        feederSelect.dispatchEvent(new Event('change'));
-      }
-    }
-  </script>
-</body>
-</html>
+            <b>Route:</b> ${item.Branch || 'Main'} ${item.SubBranch ? '> ' + item.SubBranch : ''} | <b>Seq:</b> #${item.Sequence_No}<br/>
+            <b>AE Section:</b> ${item.AE_Section || 'N/A'}<br/>
+            <b>Mobile Unit:</b> ${item.Mobile_Unit || 'N/A'}<br/>
+            ${tieBoxHtml}
+            <b>Status:</b> ${item.Remarks || 'N/A'}<br/>
+            <b>GPS:</b> ${lat.toFixed
