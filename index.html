@@ -3,24 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>TNEB Distribution Network GIS</title>
+  <title>TNEB Feeder Asset GIS Navigator</title>
 
-  <!-- Leaflet CSS -->
+  <!-- Leaflet CSS (High-Performance CDN) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous" />
-  
-  <!-- PapaParse for CSV -->
+  <!-- PapaParse for CSV Bulk Handling -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-  <!-- Firebase Realtime App & Database SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #eef2f5; }
 
     #app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; position: relative; }
 
+    /* Header Bar */
     header {
       background: #003366; color: #fff; padding: 8px 12px;
       display: flex; justify-content: space-between; align-items: center;
@@ -34,7 +30,7 @@
     }
     .btn-hdr:active { transform: scale(0.96); }
 
-    /* Strict 3-Tier Step Grid */
+    /* Strict 3-Tier Cascading Controls: Mobile -> SS -> Feeder */
     .controls-grid {
       background: #ffffff; padding: 8px 10px;
       display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
@@ -50,11 +46,14 @@
     }
     select:disabled { background: #e9ecef; color: #888; border-color: #ccc; }
 
+    /* Map Viewport */
     #map {
-      flex: 1 1 auto; width: 100%; height: 100%; min-height: 250px; background: #e5e3df; z-index: 1;
+      flex: 1 1 auto; width: 100%; height: calc(100vh - 105px); min-height: 250px;
+      background: #e5e3df; z-index: 1;
     }
     .leaflet-tile { image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; }
 
+    /* Pinning Sensitivity Toggle */
     .pin-toggle-btn {
       position: absolute; top: 115px; right: 12px; z-index: 999;
       background: #ffffff; border: 2px solid #003366; color: #003366;
@@ -63,6 +62,7 @@
     }
     .pin-toggle-btn.active { background: #d32f2f; color: #ffffff; border-color: #d32f2f; }
 
+    /* Legend */
     .legend-bar {
       position: absolute; bottom: 10px; left: 8px; right: 8px;
       background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(4px);
@@ -76,6 +76,7 @@
     .dot.structure { background: #1976d2; }
     .dot.tie { background: #ffd700; border: 2px solid #b71c1c; }
 
+    /* Modal Styling */
     #assetModal {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65);
       z-index: 99999; justify-content: center; align-items: center; padding: 12px;
@@ -119,7 +120,7 @@
       </div>
     </header>
 
-    <!-- Strict Sequential Dropdowns -->
+    <!-- 3-Tier Cascading Hierarchy -->
     <div class="controls-grid">
       <div class="control-item">
         <label for="mobileSelect">1. Mobile Unit</label>
@@ -135,8 +136,10 @@
       </div>
     </div>
 
+    <!-- Map Viewport -->
     <div id="map"></div>
 
+    <!-- Pinning Sensitivity Toggle -->
     <button class="pin-toggle-btn" id="pinToggleBtn" onclick="togglePinMode()">
       <span>📍 Pin on Map: OFF</span>
     </button>
@@ -189,7 +192,7 @@
         </div>
       </div>
 
-      <div class="form-group"><label>Asset Name / Number *</label><input type="text" id="m_name" placeholder="RMU 01" /></div>
+      <div class="form-group"><label>Asset Name / Number *</label><input type="text" id="m_name" placeholder="e.g., RMU 01 (Post Office)" /></div>
       <div class="form-group"><label>Sequence Number</label><input type="number" step="any" id="m_seq" value="1" /></div>
       <div class="form-group">
         <label>Coordinates (Latitude, Longitude) *</label>
@@ -213,11 +216,26 @@
     </div>
   </div>
 
-  <!-- Leaflet Core -->
+  <!-- Leaflet JavaScript Core -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
 
   <script>
-    // 1. Initialize Map Immediately
+    // -------------------------------------------------------------
+    // 1. Direct Cloud REST API Endpoint (100% Reliable, Zero SDK Block)
+    // -------------------------------------------------------------
+    const DB_URL = "https://tneb-gis-70e97-default-rtdb.asia-southeast1.firebasedatabase.app/tneb_network_assets";
+
+    const defaultSeed = [
+      { id: "ast_1", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Tie_SS: "", Remarks: "3-Way SF6" },
+      { id: "ast_2", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Tie_SS: "", Remarks: "250kVA DT" },
+      { id: "ast_3", Mobile_Unit: "Mobile-2", Substation: "Saidapet 33kV SS", Feeder: "Bazaar Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Saidapet", Asset_Type: "RMU", Asset_Name: "RMU 02 (Cross Tie)", Sequence_No: 1, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Industrial Feeder", Tie_SS: "Guindy 110kV SS", Remarks: "Normally Open Tie" }
+    ];
+
+    let masterData = JSON.parse(localStorage.getItem('tneb_local_cache')) || defaultSeed;
+
+    // -------------------------------------------------------------
+    // 2. Leaflet Map Initialization
+    // -------------------------------------------------------------
     const map = L.map('map', { zoomControl: true }).setView([13.0080, 80.2040], 14);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -232,28 +250,9 @@
     const markerLayer = L.layerGroup().addTo(map);
     const pathLayer = L.layerGroup().addTo(map);
 
-    // 2. Setup Firebase
-    const firebaseConfig = {
-      databaseURL: "https://tneb-gis-70e97-default-rtdb.asia-southeast1.firebasedatabase.app"
-    };
-
-    let db = null;
-    let masterData = [];
-
-    const seedData = [
-      { id: "ast_1", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Tie_SS: "", Remarks: "3-Way SF6" },
-      { id: "ast_2", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Tie_SS: "", Remarks: "250kVA DT" },
-      { id: "ast_3", Mobile_Unit: "Mobile-2", Substation: "Saidapet 33kV SS", Feeder: "Bazaar Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Saidapet", Asset_Type: "RMU", Asset_Name: "RMU 02", Sequence_No: 1, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Industrial Feeder", Tie_SS: "Guindy 110kV SS", Remarks: "Tie Switch" }
-    ];
-
-    try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.database();
-    } catch(e) {
-      console.warn("Using offline storage:", e);
-    }
-
+    // -------------------------------------------------------------
     // 3. Medium-Sensitivity Pinning Toggle
+    // -------------------------------------------------------------
     let isPinModeActive = false;
     let touchTimer = null;
 
@@ -288,7 +287,33 @@
       if (touchTimer) clearTimeout(touchTimer);
     });
 
-    // 4. Strict Cascading Dropdowns: Mobile -> SS -> Feeder (Alphabetical)
+    // -------------------------------------------------------------
+    // 4. Cloud Synchronisation via Native REST API
+    // -------------------------------------------------------------
+    async function loadCloudData() {
+      try {
+        const res = await fetch(`${DB_URL}.json`);
+        const data = await res.json();
+        if (data) {
+          masterData = Object.keys(data).map(key => ({ ...data[key], id: key }));
+        } else {
+          // If fresh database, initialize with seed
+          for (let item of defaultSeed) {
+            await fetch(`${DB_URL}.json`, { method: 'POST', body: JSON.stringify(item) });
+          }
+          masterData = defaultSeed;
+        }
+        localStorage.setItem('tneb_local_cache', JSON.stringify(masterData));
+      } catch (err) {
+        console.warn("Using offline cached data:", err);
+      }
+      populateMobiles();
+      renderActiveFeeder();
+    }
+
+    // -------------------------------------------------------------
+    // 5. Strict Cascading: Mobile -> SS (A-Z) -> Feeder (A-Z)
+    // -------------------------------------------------------------
     const mobileSelect = document.getElementById('mobileSelect');
     const ssSelect = document.getElementById('ssSelect');
     const feederSelect = document.getElementById('feederSelect');
@@ -334,7 +359,6 @@
 
     function populateSubstations(mobileName) {
       const currentSS = ssSelect.value;
-      // Substations belonging ONLY to this selected Mobile Unit, sorted alphabetically
       const substations = [...new Set(
         masterData.filter(d => (d.Mobile_Unit || '').trim() === mobileName).map(d => (d.Substation || '').trim())
       )].filter(Boolean).sort((a, b) => a.localeCompare(b));
@@ -371,7 +395,6 @@
 
     function populateFeeders(mobileName, ssName) {
       const currentFeeder = feederSelect.value;
-      // Feeders belonging ONLY to this Substation & Mobile Unit, sorted alphabetically
       const feeders = [...new Set(
         masterData.filter(d => (d.Mobile_Unit || '').trim() === mobileName && (d.Substation || '').trim() === ssName)
                   .map(d => (d.Feeder || '').trim())
@@ -397,7 +420,9 @@
       renderFeeder(mobileSelect.value, ssSelect.value, feederSelect.value);
     }
 
-    // 5. Render Feeder Assets on Map
+    // -------------------------------------------------------------
+    // 6. Feeder Assets & Sub-Branch Tracing
+    // -------------------------------------------------------------
     function renderFeeder(mobileName, ssName, feederName) {
       markerLayer.clearLayers();
       pathLayer.clearLayers();
@@ -435,25 +460,4 @@
         });
 
         const tieBoxHtml = hasTie ? `
-          <div style="background:#fff3e0; border-left:3px solid #ff9800; padding:4px 6px; margin:5px 0; font-size:11px;">
-            <b style="color:#e65100;">⚡ TIE POINT</b><br/>
-            <b>To Feeder:</b> ${item.Tie_Feeder}<br/>
-            <b>Target SS:</b> ${item.Tie_SS || 'Same SS'}
-          </div>` : '';
-
-        marker.bindPopup(`
-          <div style="font-size:12px; line-height:1.4; min-width: 210px;">
-            <b style="color:${color}; font-size:13px;">[${item.Asset_Type}] ${item.Asset_Name}</b><br/>
-            <b>Mobile:</b> ${item.Mobile_Unit || 'N/A'}<br/>
-            <b>SS:</b> ${item.Substation || 'N/A'}<br/>
-            <b>Feeder:</b> ${item.Feeder || 'N/A'}<br/>
-            <b>Route:</b> ${item.Branch || 'Main'} ${item.SubBranch ? '> ' + item.SubBranch : ''} | <b>Seq:</b> #${item.Sequence_No}<br/>
-            <b>AE Section:</b> ${item.AE_Section || 'N/A'}<br/>
-            ${tieBoxHtml}
-            <b>Status:</b> ${item.Remarks || 'N/A'}<br/>
-            <b>GPS:</b> ${lat.toFixed(5)}, ${lng.toFixed(5)}<br/>
-            
-            <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank"
-                 style="color:#fff; background:#0056b3; padding:4px 7px; border-radius:3px; text-decoration:none; display:inline-block; font-size:11px; font-weight:bold;">
-                Navigate 
+        
