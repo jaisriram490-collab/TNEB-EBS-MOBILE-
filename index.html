@@ -7,7 +7,8 @@
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous" />
-  <!-- PapaParse for CSV Export/Import -->
+  
+  <!-- PapaParse for CSV -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <!-- Firebase Realtime App & Database SDKs -->
@@ -29,10 +30,11 @@
     .header-actions { display: flex; gap: 5px; }
     .btn-hdr {
       background: #ff9800; border: none; color: #111; font-weight: 700;
-      padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem;
+      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;
     }
     .btn-hdr:active { transform: scale(0.96); }
 
+    /* Strict 3-Tier Step Grid */
     .controls-grid {
       background: #ffffff; padding: 8px 10px;
       display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
@@ -46,29 +48,20 @@
       width: 100%; padding: 6px 4px; font-size: 0.78rem;
       border: 1px solid #aaa; border-radius: 4px; background: #fff; outline: none;
     }
-
-    .search-bar-container {
-      background: #f8f9fa; padding: 4px 10px; border-bottom: 1px solid #e0e0e0;
-      display: flex; gap: 6px; align-items: center; flex-shrink: 0; z-index: 1000;
-    }
-    .search-bar-container input {
-      flex: 1; padding: 5px 8px; font-size: 0.75rem; border: 1px solid #ccc; border-radius: 4px;
-    }
+    select:disabled { background: #e9ecef; color: #888; border-color: #ccc; }
 
     #map {
-      flex: 1 1 auto; width: 100%; height: 100%; background: #e5e3df; z-index: 1;
+      flex: 1 1 auto; width: 100%; height: 100%; min-height: 250px; background: #e5e3df; z-index: 1;
     }
     .leaflet-tile { image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; }
 
     .pin-toggle-btn {
-      position: absolute; top: 125px; right: 12px; z-index: 999;
+      position: absolute; top: 115px; right: 12px; z-index: 999;
       background: #ffffff; border: 2px solid #003366; color: #003366;
-      font-weight: 800; font-size: 0.75rem; padding: 8px 12px; border-radius: 20px;
+      font-weight: 800; font-size: 0.75rem; padding: 7px 11px; border-radius: 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; gap: 4px;
     }
-    .pin-toggle-btn.active {
-      background: #d32f2f; color: #ffffff; border-color: #d32f2f;
-    }
+    .pin-toggle-btn.active { background: #d32f2f; color: #ffffff; border-color: #d32f2f; }
 
     .legend-bar {
       position: absolute; bottom: 10px; left: 8px; right: 8px;
@@ -126,23 +119,20 @@
       </div>
     </header>
 
+    <!-- Strict Sequential Dropdowns -->
     <div class="controls-grid">
       <div class="control-item">
-        <label for="mobileSelect">Mobile Unit</label>
-        <select id="mobileSelect"><option value="">-- All Units --</option></select>
+        <label for="mobileSelect">1. Mobile Unit</label>
+        <select id="mobileSelect"><option value="">-- Choose Mobile --</option></select>
       </div>
       <div class="control-item">
-        <label for="ssSelect">Substation (SS)</label>
-        <select id="ssSelect"><option value="">-- Choose SS --</option></select>
+        <label for="ssSelect">2. Substation (SS)</label>
+        <select id="ssSelect" disabled><option value="">-- Choose SS --</option></select>
       </div>
       <div class="control-item">
-        <label for="feederSelect">Feeder</label>
+        <label for="feederSelect">3. Feeder</label>
         <select id="feederSelect" disabled><option value="">-- Choose Feeder --</option></select>
       </div>
-    </div>
-
-    <div class="search-bar-container">
-      <input type="text" id="quickSearchInput" placeholder="🔍 Search SS or Feeder name..." oninput="handleQuickSearch(this.value)" />
     </div>
 
     <div id="map"></div>
@@ -159,51 +149,48 @@
     </div>
   </div>
 
+  <!-- Asset Modal -->
   <div id="assetModal">
     <div class="modal-box">
       <h3 id="modalTitle">Add Network Asset</h3>
       <input type="hidden" id="edit_id" value="" />
       <button type="button" class="gps-btn" onclick="fetchCurrentGPS()">📍 Auto-Fill Current GPS</button>
 
-      <div class="section-title">1. Administrative & Section In-Charge</div>
+      <div class="section-title">1. Mobile Unit & Substation Hierarchy</div>
+      <div class="form-group"><label>Mobile Unit *</label><input type="text" id="m_mobile" placeholder="e.g., Mobile-1" /></div>
+      <div class="form-group"><label>Substation (SS) Name *</label><input type="text" id="m_ss" placeholder="e.g., Guindy 110kV SS" /></div>
+      <div class="form-group"><label>Feeder Name *</label><input type="text" id="m_feeder" placeholder="e.g., Industrial Feeder" /></div>
+
+      <div class="section-title">2. Routing Path (Main, Branch, Sub-Branch)</div>
       <div class="coords-row">
         <div class="form-group" style="flex:1;">
-          <label>Mobile Unit (Optional)</label>
-          <input type="text" id="m_mobile" placeholder="e.g., Mobile-1" />
+          <label>Branch / Path</label>
+          <input type="text" id="m_branch" value="Main" placeholder="Main, Branch-1" />
         </div>
+        <div class="form-group" style="flex:1;">
+          <label>Sub-Branch</label>
+          <input type="text" id="m_subbranch" placeholder="Sub-A (Optional)" />
+        </div>
+      </div>
+
+      <div class="section-title">3. Equipment Specs & Position</div>
+      <div class="coords-row">
         <div class="form-group" style="flex:1;">
           <label>AE Section</label>
           <input type="text" id="m_ae" placeholder="e.g., AE/Guindy" />
         </div>
-      </div>
-
-      <div class="section-title">2. Substation & Feeder Info</div>
-      <div class="form-group"><label>Substation (SS) Name *</label><input type="text" id="m_ss" placeholder="Guindy 110kV SS" /></div>
-      <div class="form-group"><label>Feeder Name *</label><input type="text" id="m_feeder" placeholder="Industrial Feeder" /></div>
-
-      <div class="section-title">3. Routing Hierarchy (Main, Branch, Sub-Branch)</div>
-      <div class="coords-row">
         <div class="form-group" style="flex:1;">
-          <label>Branch / Path Name</label>
-          <input type="text" id="m_branch" value="Main" placeholder="Main, Branch-1, Spur-A" />
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label>Sub-Branch (Optional)</label>
-          <input type="text" id="m_subbranch" placeholder="Sub-1, Tap-A" />
+          <label>Asset Type *</label>
+          <select id="m_type">
+            <option value="RMU">RMU</option>
+            <option value="RMG">RMG</option>
+            <option value="Structure">Structure / DP</option>
+          </select>
         </div>
       </div>
 
-      <div class="section-title">4. Equipment Specs & Position</div>
-      <div class="form-group">
-        <label>Asset Type *</label>
-        <select id="m_type">
-          <option value="RMU">RMU (Ring Main Unit)</option>
-          <option value="RMG">RMG (Ring Main Gear)</option>
-          <option value="Structure">Structure / DP / DT Pole</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Asset Name / Number *</label><input type="text" id="m_name" placeholder="RMU 04" /></div>
-      <div class="form-group"><label>Sequence Number (e.g. 1, 2, 2.5, 3...)</label><input type="number" step="any" id="m_seq" value="1" /></div>
+      <div class="form-group"><label>Asset Name / Number *</label><input type="text" id="m_name" placeholder="RMU 01" /></div>
+      <div class="form-group"><label>Sequence Number</label><input type="number" step="any" id="m_seq" value="1" /></div>
       <div class="form-group">
         <label>Coordinates (Latitude, Longitude) *</label>
         <div class="coords-row">
@@ -212,45 +199,26 @@
         </div>
       </div>
 
-      <div class="section-title">5. Inter-Feeder Tie Information</div>
+      <div class="section-title">4. Tie Switch Information (Optional)</div>
       <div class="coords-row">
         <div class="form-group" style="flex:1;"><label>Tie Feeder</label><input type="text" id="m_tie_feeder" placeholder="Race Course Feeder" /></div>
         <div class="form-group" style="flex:1;"><label>Tie Substation</label><input type="text" id="m_tie_ss" placeholder="Saidapet 33kV SS" /></div>
       </div>
-      <div class="form-group"><label>Remarks / Status</label><input type="text" id="m_remarks" placeholder="3-Way SF6, N.O. switch" /></div>
+      <div class="form-group"><label>Remarks</label><input type="text" id="m_remarks" placeholder="3-Way SF6" /></div>
 
       <div class="modal-btns">
         <button type="button" class="btn-cancel" onclick="closeAssetModal()">Cancel</button>
-        <button type="button" class="btn-save" id="btnSaveAsset" onclick="saveAsset()">Save to Cloud</button>
+        <button type="button" class="btn-save" id="btnSaveAsset" onclick="saveAsset()">Save</button>
       </div>
     </div>
   </div>
 
+  <!-- Leaflet Core -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
 
   <script>
-    // Configured directly with your project endpoint in Singapore region
-    const firebaseConfig = {
-      databaseURL: "https://tneb-gis-70e97-default-rtdb.asia-southeast1.firebasedatabase.app"
-    };
-
-    let db = null;
-    let masterData = [];
-
-    try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.database();
-    } catch(err) {
-      console.warn("Firebase initialization issue:", err);
-    }
-
-    const seedData = [
-      { id: "ast_1", Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Tie_SS: "", Remarks: "3-Way SF6" },
-      { id: "ast_2", Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Mobile_Unit: "Mobile-1", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Tie_SS: "", Remarks: "250kVA DT" },
-      { id: "ast_3", Substation: "Guindy SS", Feeder: "Industrial Feeder", Branch: "Branch-1", SubBranch: "Sub-A", AE_Section: "AE/Saidapet", Mobile_Unit: "Mobile-2", Asset_Type: "RMU", Asset_Name: "RMU 02 (Cross Tie)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Bazaar Feeder", Tie_SS: "Saidapet 33kV SS", Remarks: "N.O. Tie Switch" }
-    ];
-
-    const map = L.map('map', { zoomControl: true, fadeAnimation: false }).setView([13.0080, 80.2040], 14);
+    // 1. Initialize Map Immediately
+    const map = L.map('map', { zoomControl: true }).setView([13.0080, 80.2040], 14);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -258,14 +226,34 @@
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    window.addEventListener('load', () => {
-      setTimeout(() => map.invalidateSize(), 300);
-      setTimeout(() => map.invalidateSize(), 800);
-    });
+    setTimeout(() => { map.invalidateSize(); }, 300);
+    setTimeout(() => { map.invalidateSize(); }, 800);
 
     const markerLayer = L.layerGroup().addTo(map);
     const pathLayer = L.layerGroup().addTo(map);
 
+    // 2. Setup Firebase
+    const firebaseConfig = {
+      databaseURL: "https://tneb-gis-70e97-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+
+    let db = null;
+    let masterData = [];
+
+    const seedData = [
+      { id: "ast_1", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Tie_SS: "", Remarks: "3-Way SF6" },
+      { id: "ast_2", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Tie_SS: "", Remarks: "250kVA DT" },
+      { id: "ast_3", Mobile_Unit: "Mobile-2", Substation: "Saidapet 33kV SS", Feeder: "Bazaar Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Saidapet", Asset_Type: "RMU", Asset_Name: "RMU 02", Sequence_No: 1, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Industrial Feeder", Tie_SS: "Guindy 110kV SS", Remarks: "Tie Switch" }
+    ];
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+    } catch(e) {
+      console.warn("Using offline storage:", e);
+    }
+
+    // 3. Medium-Sensitivity Pinning Toggle
     let isPinModeActive = false;
     let touchTimer = null;
 
@@ -294,61 +282,62 @@
         openAddModal();
         document.getElementById('m_lat').value = e.latlng.lat.toFixed(6);
         document.getElementById('m_lng').value = e.latlng.lng.toFixed(6);
-      }, 800);
+      }, 750);
     });
     map.on('mouseup mousemove zoomstart', function() {
       if (touchTimer) clearTimeout(touchTimer);
     });
 
-    function listenToCloud() {
-      if (!db) {
-        masterData = JSON.parse(localStorage.getItem('tneb_asset_v10')) || seedData;
-        populateDropdowns();
-        return;
-      }
-
-      db.ref("tneb_network_assets").on("value", snapshot => {
-        const val = snapshot.val();
-        if (val) {
-          masterData = Object.keys(val).map(key => ({ ...val[key], id: key }));
-        } else {
-          seedData.forEach(item => db.ref("tneb_network_assets").push(item));
-          masterData = seedData;
-        }
-        localStorage.setItem('tneb_asset_v10', JSON.stringify(masterData));
-        populateDropdowns();
-        renderActiveFeeder();
-      });
-    }
-
+    // 4. Strict Cascading Dropdowns: Mobile -> SS -> Feeder (Alphabetical)
     const mobileSelect = document.getElementById('mobileSelect');
     const ssSelect = document.getElementById('ssSelect');
     const feederSelect = document.getElementById('feederSelect');
 
-    function populateDropdowns() {
-      const selectedMobile = mobileSelect.value;
-      const selectedSS = ssSelect.value;
-      const selectedFeeder = feederSelect.value;
-
+    function populateMobiles() {
+      const currentMobile = mobileSelect.value;
       const mobiles = [...new Set(masterData.map(d => (d.Mobile_Unit || '').trim()))]
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b));
 
-      mobileSelect.innerHTML = '<option value="">-- All Units --</option>';
+      mobileSelect.innerHTML = '<option value="">-- Choose Mobile --</option>';
       mobiles.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m; opt.textContent = m;
         mobileSelect.appendChild(opt);
       });
-      mobileSelect.value = selectedMobile;
 
-      let filteredForSS = masterData;
-      if (selectedMobile) {
-        filteredForSS = masterData.filter(d => (d.Mobile_Unit || '').trim() === selectedMobile);
+      if (currentMobile && mobiles.includes(currentMobile)) {
+        mobileSelect.value = currentMobile;
+        populateSubstations(currentMobile);
+      } else {
+        ssSelect.innerHTML = '<option value="">-- Choose SS --</option>';
+        ssSelect.disabled = true;
+        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
+        feederSelect.disabled = true;
       }
-      const substations = [...new Set(filteredForSS.map(d => (d.Substation || '').trim()))]
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b));
+    }
+
+    mobileSelect.addEventListener('change', function() {
+      const selectedMobile = this.value;
+      markerLayer.clearLayers();
+      pathLayer.clearLayers();
+
+      if (!selectedMobile) {
+        ssSelect.innerHTML = '<option value="">-- Choose SS --</option>';
+        ssSelect.disabled = true;
+        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
+        feederSelect.disabled = true;
+        return;
+      }
+      populateSubstations(selectedMobile);
+    });
+
+    function populateSubstations(mobileName) {
+      const currentSS = ssSelect.value;
+      // Substations belonging ONLY to this selected Mobile Unit, sorted alphabetically
+      const substations = [...new Set(
+        masterData.filter(d => (d.Mobile_Unit || '').trim() === mobileName).map(d => (d.Substation || '').trim())
+      )].filter(Boolean).sort((a, b) => a.localeCompare(b));
 
       ssSelect.innerHTML = '<option value="">-- Choose SS --</option>';
       substations.forEach(s => {
@@ -356,35 +345,36 @@
         opt.value = s; opt.textContent = s;
         ssSelect.appendChild(opt);
       });
+      ssSelect.disabled = false;
 
-      if (selectedSS && substations.includes(selectedSS)) {
-        ssSelect.value = selectedSS;
-        populateFeeders(selectedSS, selectedFeeder);
+      if (currentSS && substations.includes(currentSS)) {
+        ssSelect.value = currentSS;
+        populateFeeders(mobileName, currentSS);
       } else {
         feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
         feederSelect.disabled = true;
       }
     }
 
-    mobileSelect.addEventListener('change', () => {
-      populateDropdowns();
-      renderActiveFeeder();
-    });
-
     ssSelect.addEventListener('change', function() {
-      populateFeeders(this.value, "");
-      renderActiveFeeder();
-    });
+      const selectedSS = this.value;
+      markerLayer.clearLayers();
+      pathLayer.clearLayers();
 
-    function populateFeeders(ssName, keepFeeder) {
-      if (!ssName) {
+      if (!selectedSS) {
         feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
         feederSelect.disabled = true;
         return;
       }
+      populateFeeders(mobileSelect.value, selectedSS);
+    });
 
+    function populateFeeders(mobileName, ssName) {
+      const currentFeeder = feederSelect.value;
+      // Feeders belonging ONLY to this Substation & Mobile Unit, sorted alphabetically
       const feeders = [...new Set(
-        masterData.filter(d => (d.Substation || '').trim() === ssName).map(d => (d.Feeder || '').trim())
+        masterData.filter(d => (d.Mobile_Unit || '').trim() === mobileName && (d.Substation || '').trim() === ssName)
+                  .map(d => (d.Feeder || '').trim())
       )].filter(Boolean).sort((a, b) => a.localeCompare(b));
 
       feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
@@ -394,44 +384,30 @@
         feederSelect.appendChild(opt);
       });
       feederSelect.disabled = false;
-      if (keepFeeder && feeders.includes(keepFeeder)) {
-        feederSelect.value = keepFeeder;
+
+      if (currentFeeder && feeders.includes(currentFeeder)) {
+        feederSelect.value = currentFeeder;
+        renderActiveFeeder();
       }
     }
 
     feederSelect.addEventListener('change', () => renderActiveFeeder());
 
     function renderActiveFeeder() {
-      renderFeeder(ssSelect.value, feederSelect.value);
+      renderFeeder(mobileSelect.value, ssSelect.value, feederSelect.value);
     }
 
-    function handleQuickSearch(query) {
-      if (!query || query.length < 2) return;
-      const q = query.toLowerCase();
-
-      const matched = masterData.find(d => 
-        (d.Substation && d.Substation.toLowerCase().includes(q)) ||
-        (d.Feeder && d.Feeder.toLowerCase().includes(q))
-      );
-
-      if (matched) {
-        if (matched.Mobile_Unit) mobileSelect.value = matched.Mobile_Unit;
-        populateDropdowns();
-        ssSelect.value = matched.Substation;
-        populateFeeders(matched.Substation, matched.Feeder);
-        feederSelect.value = matched.Feeder;
-        renderActiveFeeder();
-      }
-    }
-
-    function renderFeeder(ssName, feederName) {
+    // 5. Render Feeder Assets on Map
+    function renderFeeder(mobileName, ssName, feederName) {
       markerLayer.clearLayers();
       pathLayer.clearLayers();
 
-      if (!ssName || !feederName) return;
+      if (!mobileName || !ssName || !feederName) return;
 
       const assets = masterData
-        .filter(d => (d.Substation || '').trim() === ssName && (d.Feeder || '').trim() === feederName)
+        .filter(d => (d.Mobile_Unit || '').trim() === mobileName &&
+                     (d.Substation || '').trim() === ssName &&
+                     (d.Feeder || '').trim() === feederName)
         .sort((a, b) => parseFloat(a.Sequence_No) - parseFloat(b.Sequence_No));
 
       if (assets.length === 0) return;
@@ -468,9 +444,16 @@
         marker.bindPopup(`
           <div style="font-size:12px; line-height:1.4; min-width: 210px;">
             <b style="color:${color}; font-size:13px;">[${item.Asset_Type}] ${item.Asset_Name}</b><br/>
+            <b>Mobile:</b> ${item.Mobile_Unit || 'N/A'}<br/>
+            <b>SS:</b> ${item.Substation || 'N/A'}<br/>
+            <b>Feeder:</b> ${item.Feeder || 'N/A'}<br/>
             <b>Route:</b> ${item.Branch || 'Main'} ${item.SubBranch ? '> ' + item.SubBranch : ''} | <b>Seq:</b> #${item.Sequence_No}<br/>
             <b>AE Section:</b> ${item.AE_Section || 'N/A'}<br/>
-            <b>Mobile Unit:</b> ${item.Mobile_Unit || 'N/A'}<br/>
             ${tieBoxHtml}
             <b>Status:</b> ${item.Remarks || 'N/A'}<br/>
-            <b>GPS:</b> ${lat.toFixed
+            <b>GPS:</b> ${lat.toFixed(5)}, ${lng.toFixed(5)}<br/>
+            
+            <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank"
+                 style="color:#fff; background:#0056b3; padding:4px 7px; border-radius:3px; text-decoration:none; display:inline-block; font-size:11px; font-weight:bold;">
+                Navigate 
