@@ -1,447 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>TNEB Feeder Asset GIS Navigator</title>
-
-  <!-- High-reliability Leaflet CDN -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TNEB Test</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #eef2f5; }
-
-    #app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; position: relative; }
-
-    header {
-      background: #003366; color: #fff; padding: 8px 12px;
-      display: flex; justify-content: space-between; align-items: center;
-      height: 50px; flex-shrink: 0; z-index: 1000;
-    }
-    header h1 { font-size: 0.90rem; font-weight: 700; letter-spacing: 0.4px; }
-    .header-actions { display: flex; gap: 5px; }
-    .btn-hdr {
-      background: #ff9800; border: none; color: #111; font-weight: 700;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;
-    }
-
-    /* 3-Tier Cascading Selector: Mobile -> SS -> Feeder */
-    .controls-grid {
-      background: #ffffff; padding: 6px 10px;
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
-      border-bottom: 1px solid #dcdcdc; flex-shrink: 0; z-index: 1000;
-    }
-    .control-item label {
-      display: block; font-size: 0.60rem; font-weight: 800; color: #555;
-      text-transform: uppercase; margin-bottom: 2px;
-    }
-    select {
-      width: 100%; padding: 6px 3px; font-size: 0.76rem;
-      border: 1px solid #aaa; border-radius: 4px; background: #fff; outline: none;
-    }
-    select:disabled { background: #e9ecef; color: #888; border-color: #ccc; }
-
-    /* Map viewport container */
-    #map {
-      flex: 1 1 auto; width: 100%; height: calc(100vh - 105px); min-height: 250px;
-      background: #f2efe9; position: relative; z-index: 1;
-    }
-
-    .pin-toggle-btn {
-      position: absolute; top: 115px; right: 12px; z-index: 999;
-      background: #ffffff; border: 2px solid #003366; color: #003366;
-      font-weight: 800; font-size: 0.72rem; padding: 6px 11px; border-radius: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer;
-    }
-    .pin-toggle-btn.active { background: #d32f2f; color: #ffffff; border-color: #d32f2f; }
-
-    .legend-bar {
-      position: absolute; bottom: 8px; left: 8px; right: 8px;
-      background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(4px);
-      padding: 6px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      display: flex; justify-content: space-around; font-size: 0.66rem; font-weight: 700; z-index: 999;
-    }
-    .legend-item { display: flex; align-items: center; gap: 4px; }
-    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-    .dot.rmu { background: #d32f2f; }
-    .dot.rmg { background: #f57c00; }
-    .dot.structure { background: #1976d2; }
-
-    /* Standalone Modal Form */
-    #assetModal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      z-index: 999999; justify-content: center; align-items: center; padding: 12px;
-    }
-    .modal-box {
-      background: #fff; width: 100%; max-width: 420px; max-height: 88vh;
-      overflow-y: auto; padding: 14px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    }
-    .modal-box h3 { font-size: 0.95rem; color: #003366; margin-bottom: 8px; }
-    .gps-btn {
-      width: 100%; background: #0288d1; color: white; border: none; font-weight: 700;
-      padding: 8px; border-radius: 4px; font-size: 0.74rem; cursor: pointer; margin-bottom: 8px;
-    }
-    .section-title {
-      font-size: 0.66rem; font-weight: 800; color: #003366; background: #e3f2fd;
-      padding: 3px 6px; border-radius: 3px; margin: 6px 0 4px 0; text-transform: uppercase;
-    }
-    .form-group { margin-bottom: 5px; }
-    .form-group label { display: block; font-size: 0.64rem; font-weight: 700; color: #444; }
-    .form-group input, .form-group select {
-      width: 100%; padding: 6px; font-size: 0.78rem; border: 1px solid #ccc;
-      border-radius: 4px; margin-top: 2px;
-    }
-    .coords-row { display: flex; gap: 6px; }
-    .coords-row input { flex: 1; }
-    .modal-btns { display: flex; gap: 8px; margin-top: 12px; }
-    .modal-btns button {
-      flex: 1; padding: 9px; border: none; border-radius: 4px; font-weight: 700;
-      font-size: 0.82rem; cursor: pointer;
-    }
-    .btn-save { background: #2e7d32; color: #fff; }
-    .btn-cancel { background: #757575; color: #fff; }
+    body { font-family: sans-serif; padding: 16px; background: #fff; }
+    #log { background: #111; color: #0f0; padding: 12px; font-family: monospace; font-size: 13px; border-radius: 6px; min-height: 120px; white-space: pre-wrap; }
+    .btn { background: #003366; color: #fff; padding: 12px 18px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; margin-top: 15px; width: 100%; }
+    #map { width: 100%; height: 250px; background: #ccc; margin-top: 15px; border-radius: 6px; }
   </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script>
+    // Catch every single error and print it on screen
+    window.onerror = function(msg, url, line) {
+      document.getElementById('log').innerHTML += '\n❌ ERROR: ' + msg + ' (Line: ' + line + ')';
+      return false;
+    };
+  </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-
-  <div id="app-container">
-    <header>
-      <h1>TNEB GIS Navigator</h1>
-      <div class="header-actions">
-        <button class="btn-hdr" onclick="openAddModal()">➕ Add</button>
-        <button class="btn-hdr" onclick="exportData()">💾 Export</button>
-      </div>
-    </header>
-
-    <div class="controls-grid">
-      <div class="control-item">
-        <label for="mobileSelect">1. Mobile Unit</label>
-        <select id="mobileSelect"><option value="">-- Choose Mobile --</option></select>
-      </div>
-      <div class="control-item">
-        <label for="ssSelect">2. Substation (SS)</label>
-        <select id="ssSelect" disabled><option value="">-- Choose SS --</option></select>
-      </div>
-      <div class="control-item">
-        <label for="feederSelect">3. Feeder</label>
-        <select id="feederSelect" disabled><option value="">-- Choose Feeder --</option></select>
-      </div>
-    </div>
-
-    <div id="map"></div>
-
-    <button class="pin-toggle-btn" id="pinToggleBtn" onclick="togglePinMode()">
-      <span>📍 Pin on Map: OFF</span>
-    </button>
-
-    <div class="legend-bar">
-      <div class="legend-item"><span class="dot rmu"></span> RMU</div>
-      <div class="legend-item"><span class="dot rmg"></span> RMG</div>
-      <div class="legend-item"><span class="dot structure"></span> Structure</div>
-    </div>
-  </div>
-
-  <!-- Asset Form Modal -->
-  <div id="assetModal">
-    <div class="modal-box">
-      <h3 id="modalTitle">Add Network Asset</h3>
-      <button type="button" class="gps-btn" onclick="fetchCurrentGPS()">📍 Auto-Fill Current GPS</button>
-
-      <div class="section-title">1. Location & Mobile Unit</div>
-      <div class="form-group"><label>Mobile Unit *</label><input type="text" id="m_mobile" placeholder="Mobile-1" /></div>
-      <div class="form-group"><label>Substation (SS) *</label><input type="text" id="m_ss" placeholder="Guindy 110kV SS" /></div>
-      <div class="form-group"><label>Feeder Name *</label><input type="text" id="m_feeder" placeholder="Industrial Feeder" /></div>
-
-      <div class="section-title">2. Routing Branch & Sub-Branch</div>
-      <div class="coords-row">
-        <div class="form-group" style="flex:1;"><label>Branch</label><input type="text" id="m_branch" value="Main" /></div>
-        <div class="form-group" style="flex:1;"><label>Sub-Branch</label><input type="text" id="m_subbranch" placeholder="Optional" /></div>
-      </div>
-
-      <div class="section-title">3. Equipment Specs & GPS</div>
-      <div class="coords-row">
-        <div class="form-group" style="flex:1;"><label>AE Section</label><input type="text" id="m_ae" placeholder="AE/Guindy" /></div>
-        <div class="form-group" style="flex:1;">
-          <label>Asset Type *</label>
-          <select id="m_type">
-            <option value="RMU">RMU</option>
-            <option value="RMG">RMG</option>
-            <option value="Structure">Structure</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group"><label>Asset Name / Number *</label><input type="text" id="m_name" placeholder="RMU 01" /></div>
-      <div class="form-group"><label>Sequence Number</label><input type="number" step="any" id="m_seq" value="1" /></div>
-      <div class="form-group">
-        <label>Coordinates (Latitude, Longitude) *</label>
-        <div class="coords-row">
-          <input type="number" step="any" id="m_lat" placeholder="13.0080" />
-          <input type="number" step="any" id="m_lng" placeholder="80.2040" />
-        </div>
-      </div>
-      <div class="form-group"><label>Tie Feeder (Optional)</label><input type="text" id="m_tie" placeholder="Race Course Feeder" /></div>
-      <div class="form-group"><label>Remarks</label><input type="text" id="m_remarks" placeholder="3-Way SF6" /></div>
-
-      <div class="modal-btns">
-        <button type="button" class="btn-cancel" onclick="closeAssetModal()">Cancel</button>
-        <button type="button" class="btn-save" onclick="saveAsset()">Save</button>
-      </div>
-    </div>
-  </div>
+  <h3>TNEB GIS Diagnostic Test</h3>
+  <div id="log">Testing system...</div>
+  <button class="btn" onclick="testClick()">Tap to Test Add Modal</button>
+  <div id="map"></div>
 
   <script>
-    // Pure Local Cache with Non-Blocking Background Firebase Synchronization
-    const FIREBASE_ENDPOINT = "https://tneb-gis-70e97-default-rtdb.asia-southeast1.firebasedatabase.app/tneb_network_assets.json";
-
-    const defaultSeed = [
-      { id: "ast_1", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "RMU", Asset_Name: "RMU 01 (Post Office)", Sequence_No: 1, Latitude: 13.0080, Longitude: 80.2040, Tie_Feeder: "", Remarks: "3-Way SF6" },
-      { id: "ast_2", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Main", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "Structure", Asset_Name: "DP Pole 04", Sequence_No: 2, Latitude: 13.0092, Longitude: 80.2052, Tie_Feeder: "", Remarks: "250kVA DT" },
-      { id: "ast_3", Mobile_Unit: "Mobile-1", Substation: "Guindy 110kV SS", Feeder: "Industrial Feeder", Branch: "Branch-1", SubBranch: "", AE_Section: "AE/Guindy", Asset_Type: "RMU", Asset_Name: "RMU 02 (Cross Tie)", Sequence_No: 3, Latitude: 13.0118, Longitude: 80.2078, Tie_Feeder: "Bazaar Feeder", Remarks: "Normally Open Tie" }
-    ];
-
-    let masterData = [];
-    try {
-      masterData = JSON.parse(localStorage.getItem('tneb_asset_v15')) || defaultSeed;
-    } catch(e) {
-      masterData = defaultSeed;
+    function print(text) {
+      document.getElementById('log').innerHTML += '\n' + text;
     }
-
-    // Modal Control
-    function openAddModal() {
-      document.getElementById('m_mobile').value = document.getElementById('mobileSelect').value || 'Mobile-1';
-      document.getElementById('m_ss').value = document.getElementById('ssSelect').value || 'Guindy 110kV SS';
-      document.getElementById('m_feeder').value = document.getElementById('feederSelect').value || 'Industrial Feeder';
-      document.getElementById('assetModal').style.display = 'flex';
-    }
-    function closeAssetModal() {
-      document.getElementById('assetModal').style.display = 'none';
-    }
-
-    // Leaflet Map Initialization (Guaranteed immediate load)
-    let map = null;
-    let markerLayer = null;
-    let pathLayer = null;
-    let isPinModeActive = false;
 
     try {
-      map = L.map('map', { zoomControl: true }).setView([13.0080, 80.2040], 15);
-
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '© OpenStreetMap, © CARTO'
-      }).addTo(map);
-
-      markerLayer = L.layerGroup().addTo(map);
-      pathLayer = L.layerGroup().addTo(map);
-
-      map.on('click', function(e) {
-        if (!isPinModeActive) return;
-        openAddModal();
-        document.getElementById('m_lat').value = e.latlng.lat.toFixed(6);
-        document.getElementById('m_lng').value = e.latlng.lng.toFixed(6);
-        togglePinMode();
-      });
-
-      window.addEventListener('load', () => {
-        setTimeout(() => map.invalidateSize(), 300);
-      });
-    } catch(err) {
-      console.warn("Leaflet startup warning:", err);
-    }
-
-    function togglePinMode() {
-      isPinModeActive = !isPinModeActive;
-      const btn = document.getElementById('pinToggleBtn');
-      btn.className = isPinModeActive ? 'pin-toggle-btn active' : 'pin-toggle-btn';
-      btn.innerHTML = isPinModeActive ? '<span>📍 Tap Map to Pin: ON</span>' : '<span>📍 Pin on Map: OFF</span>';
-    }
-
-    // Cascading Dropdowns: Mobile -> SS (A-Z) -> Feeder (A-Z)
-    const mobileSelect = document.getElementById('mobileSelect');
-    const ssSelect = document.getElementById('ssSelect');
-    const feederSelect = document.getElementById('feederSelect');
-
-    function populateMobiles() {
-      const mobiles = [...new Set(masterData.map(d => (d.Mobile_Unit || '').trim()))].filter(Boolean).sort();
-      mobileSelect.innerHTML = '<option value="">-- Choose Mobile --</option>';
-      mobiles.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m; opt.textContent = m;
-        mobileSelect.appendChild(opt);
-      });
-      if (mobiles.length > 0) {
-        mobileSelect.value = mobiles[0];
-        populateSubstations(mobiles[0]);
-      }
-    }
-
-    mobileSelect.addEventListener('change', function() {
-      if (!this.value) {
-        ssSelect.innerHTML = '<option value="">-- Choose SS --</option>'; ssSelect.disabled = true;
-        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>'; feederSelect.disabled = true;
-        return;
-      }
-      populateSubstations(this.value);
-    });
-
-    function populateSubstations(m) {
-      const substations = [...new Set(masterData.filter(d => (d.Mobile_Unit || '').trim() === m).map(d => (d.Substation || '').trim()))].filter(Boolean).sort();
-      ssSelect.innerHTML = '<option value="">-- Choose SS --</option>';
-      substations.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s; opt.textContent = s;
-        ssSelect.appendChild(opt);
-      });
-      ssSelect.disabled = false;
-      if (substations.length > 0) {
-        ssSelect.value = substations[0];
-        populateFeeders(m, substations[0]);
+      print('1. Checking Leaflet library...');
+      if (typeof L !== 'undefined') {
+        print('✅ Leaflet is loaded successfully.');
+        print('2. Initializing test map...');
+        var map = L.map('map').setView([13.0080, 80.2040], 14);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        print('✅ Map engine initialized successfully.');
       } else {
-        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
-        feederSelect.disabled = true;
+        print('❌ Leaflet library failed to load from internet.');
       }
+    } catch(e) {
+      print('❌ Map error: ' + e.message);
     }
 
-    ssSelect.addEventListener('change', function() {
-      if (!this.value) {
-        feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>'; feederSelect.disabled = true;
-        return;
-      }
-      populateFeeders(mobileSelect.value, this.value);
-    });
-
-    function populateFeeders(m, s) {
-      const feeders = [...new Set(masterData.filter(d => (d.Mobile_Unit || '').trim() === m && (d.Substation || '').trim() === s).map(d => (d.Feeder || '').trim()))].filter(Boolean).sort();
-      feederSelect.innerHTML = '<option value="">-- Choose Feeder --</option>';
-      feeders.forEach(f => {
-        const opt = document.createElement('option');
-        opt.value = f; opt.textContent = f;
-        feederSelect.appendChild(opt);
-      });
-      feederSelect.disabled = false;
-      if (feeders.length > 0) {
-        feederSelect.value = feeders[0];
-        renderFeeder(m, s, feeders[0]);
-      }
+    function testClick() {
+      alert('Button click works perfectly!');
+      print('✅ Tap event detected.');
     }
+  </script>
+</body>
+</html>
 
-    feederSelect.addEventListener('change', function() {
-      renderFeeder(mobileSelect.value, ssSelect.value, this.value);
-    });
-
-    function renderFeeder(m, s, f) {
-      if (!map || !markerLayer) return;
-      markerLayer.clearLayers();
-      pathLayer.clearLayers();
-
-      const items = masterData.filter(d => (d.Mobile_Unit || '').trim() === m &&
-                                           (d.Substation || '').trim() === s &&
-                                           (d.Feeder || '').trim() === f)
-                               .sort((a,b) => parseFloat(a.Sequence_No) - parseFloat(b.Sequence_No));
-      if (items.length === 0) return;
-
-      const bounds = [];
-      const coords = [];
-
-      items.forEach(item => {
-        const lat = parseFloat(item.Latitude);
-        const lng = parseFloat(item.Longitude);
-        if (isNaN(lat) || isNaN(lng)) return;
-
-        let color = item.Asset_Type === 'RMU' ? '#d32f2f' : (item.Asset_Type === 'RMG' ? '#f57c00' : '#1976d2');
-        const marker = L.circleMarker([lat, lng], { radius: 9, fillColor: color, color: '#fff', weight: 2, fillOpacity: 0.95 });
-
-        marker.bindPopup(`
-          <div style="font-size:12px;">
-            <b>[${item.Asset_Type}] ${item.Asset_Name}</b><br/>
-            <b>Path:</b> ${item.Branch || 'Main'} | <b>Seq:</b> #${item.Sequence_No}<br/>
-            <b>AE:</b> ${item.AE_Section || 'N/A'}<br/>
-            <div style="margin-top:6px;">
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="color:#fff; background:#0056b3; padding:3px 6px; border-radius:3px; text-decoration:none; font-size:11px;">Navigate ↗</a>
-              <button onclick="deleteAsset('${item.id}')" style="color:#fff; background:#c62828; border:none; padding:3px 6px; border-radius:3px; font-size:11px; cursor:pointer;">Delete</button>
-            </div>
-          </div>
-        `);
-        markerLayer.addLayer(marker);
-        bounds.push([lat, lng]);
-        coords.push([lat, lng]);
-      });
-
-      if (coords.length > 1) {
-        pathLayer.addLayer(L.polyline(coords, { color: '#003366', weight: 3.5 }));
-      }
-      if (bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-      }
-    }
-
-    function fetchCurrentGPS() {
-      if (!navigator.geolocation) { alert("GPS not available."); return; }
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          document.getElementById('m_lat').value = pos.coords.latitude.toFixed(6);
-          document.getElementById('m_lng').value = pos.coords.longitude.toFixed(6);
-          alert("GPS Coordinates Acquired!");
-        },
-        () => alert("Please turn on phone location/GPS.")
-      );
-    }
-
-    // Save Asset (Local-First Instant Save + Silent Cloud Push)
-    function saveAsset() {
-      const mobile = document.getElementById('m_mobile').value.trim();
-      const ss = document.getElementById('m_ss').value.trim();
-      const feeder = document.getElementById('m_feeder').value.trim();
-      const branch = document.getElementById('m_branch').value.trim() || 'Main';
-      const subbranch = document.getElementById('m_subbranch').value.trim();
-      const ae = document.getElementById('m_ae').value.trim();
-      const type = document.getElementById('m_type').value;
-      const name = document.getElementById('m_name').value.trim();
-      const seq = parseFloat(document.getElementById('m_seq').value) || 1;
-      const lat = parseFloat(document.getElementById('m_lat').value);
-      const lng = parseFloat(document.getElementById('m_lng').value);
-      const tie = document.getElementById('m_tie').value.trim();
-      const remarks = document.getElementById('m_remarks').value.trim();
-
-      if (!mobile || !ss || !feeder || !name || isNaN(lat) || isNaN(lng)) {
-        alert("Please fill Mobile, SS, Feeder, Asset Name, and Coordinates.");
-        return;
-      }
-
-      const payload = {
-        id: "ast_" + Date.now(),
-        Mobile_Unit: mobile, Substation: ss, Feeder: feeder, Branch: branch, SubBranch: subbranch,
-        AE_Section: ae, Asset_Type: type, Asset_Name: name, Sequence_No: seq,
-        Latitude: lat, Longitude: lng, Tie_Feeder: tie, Remarks: remarks
-      };
-
-      masterData.push(payload);
-      localStorage.setItem('tneb_asset_v15', JSON.stringify(masterData));
-      closeAssetModal();
-
-      populateMobiles();
-      mobileSelect.value = mobile;
-      populateSubstations(mobile);
-      ssSelect.value = ss;
-      populateFeeders(mobile, ss);
-      feederSelect.value = feeder;
-      renderFeeder(mobile, ss, feeder);
-
-      alert("Asset Saved Successfully!");
-
-      // Non-blocking background sync (Wrapped so network errors can NEVER crash the UI)
-      try {
-        fetch(FIREBASE_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).catch(() => {});
-      } catch(e) {}
-    }
-
-    window.deleteAsset = function(id) {
-      if (confirm("Delete this asset?")) {
-        masterData = 
