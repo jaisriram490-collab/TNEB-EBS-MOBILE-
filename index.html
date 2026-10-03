@@ -2,311 +2,294 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="theme-color" content="#003366">
+
 <title>TNEB Feeder Asset GIS</title>
 
-<!-- Leaflet -->
 <link rel="stylesheet"
 href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-*{box-sizing:border-box}
 
-html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    font-family:Arial,sans-serif;
-    background:#f4f7fa;
+*{
+box-sizing:border-box;
 }
 
-body{overflow:hidden}
+html,body{
+margin:0;
+padding:0;
+width:100%;
+height:100%;
+font-family:Arial,sans-serif;
+background:#f4f7fa;
+}
+
+body{
+overflow:hidden;
+}
 
 #app{
-    height:100vh;
-    height:100dvh;
-    display:flex;
-    flex-direction:column;
+height:100vh;
+height:100dvh;
+display:flex;
+flex-direction:column;
 }
 
 header{
-    background:#003366;
-    color:white;
-    padding:10px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
-    z-index:1000;
+background:#003366;
+color:white;
+padding:10px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:8px;
 }
 
 .title{
-    font-weight:bold;
-    font-size:17px;
+font-size:17px;
+font-weight:bold;
 }
 
-.sub{
-    font-size:10px;
-    opacity:.85;
-    margin-top:2px;
+.subtitle{
+font-size:10px;
+margin-top:2px;
+opacity:.85;
 }
 
 .actions{
-    display:flex;
-    gap:6px;
+display:flex;
+gap:6px;
 }
 
 button{
-    border:0;
-    border-radius:7px;
-    padding:9px 11px;
-    font-weight:bold;
-    font-size:13px;
-    cursor:pointer;
+border:none;
+border-radius:7px;
+padding:9px 11px;
+font-size:13px;
+font-weight:bold;
+cursor:pointer;
 }
 
-.add{
-    background:#16a05d;
-    color:white;
+.addBtn{
+background:#16a05d;
+color:white;
 }
 
-.export{
-    background:white;
-    color:#003366;
+.exportBtn{
+background:white;
+color:#003366;
 }
 
 .controls{
-    background:white;
-    padding:8px 10px;
-    border-bottom:1px solid #d5dce2;
-    z-index:900;
+background:white;
+padding:8px 10px;
+border-bottom:1px solid #ddd;
 }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:7px;
+.filterGrid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:7px;
 }
 
 label{
-    display:block;
-    font-size:11px;
-    font-weight:bold;
-    color:#455a64;
-    margin-bottom:3px;
+display:block;
+font-size:11px;
+font-weight:bold;
+color:#455a64;
+margin-bottom:3px;
 }
 
 select,
 input,
 textarea{
-    width:100%;
-    padding:8px;
-    border:1px solid #b9c4cc;
-    border-radius:6px;
-    font-size:14px;
-    background:white;
+width:100%;
+padding:8px;
+font-size:14px;
+border:1px solid #b9c4cc;
+border-radius:6px;
+background:white;
 }
 
 .status{
-    display:flex;
-    justify-content:space-between;
-    margin-top:6px;
-    font-size:11px;
-    color:#546e7a;
+display:flex;
+justify-content:space-between;
+font-size:11px;
+margin-top:6px;
 }
 
-.ok{color:#16864b}
-.err{color:#c62828}
+.statusOK{
+color:#16864b;
+}
 
-/* IMPORTANT: map must have a real height */
+.statusError{
+color:#c62828;
+}
+
 #map{
-    flex:1;
-    width:100%;
-    min-height:300px;
-    background:#dce6ec;
+flex:1;
+width:100%;
+min-height:300px;
+background:#dce6ec;
 }
 
-.pin{
-    position:absolute;
-    right:12px;
-    bottom:58px;
-    z-index:900;
-    background:#ff8f00;
-    color:white;
-    border-radius:22px;
-    box-shadow:0 2px 8px #0005;
+.pinBtn{
+position:absolute;
+right:12px;
+bottom:60px;
+z-index:1000;
+background:#ff8f00;
+color:white;
+border-radius:25px;
+box-shadow:0 2px 8px #0005;
 }
 
-.pin.active{
-    background:#c62828;
+.pinBtn.active{
+background:#c62828;
 }
 
 .legend{
-    background:white;
-    border-top:1px solid #d5dce2;
-    padding:6px 9px;
-    display:flex;
-    gap:14px;
-    flex-wrap:wrap;
-    font-size:10px;
-    z-index:800;
+background:white;
+padding:6px 10px;
+display:flex;
+gap:14px;
+flex-wrap:wrap;
+font-size:10px;
+border-top:1px solid #ddd;
 }
 
 .dot{
-    width:10px;
-    height:10px;
-    border-radius:50%;
-    display:inline-block;
-    margin-right:3px;
+display:inline-block;
+width:10px;
+height:10px;
+border-radius:50%;
+margin-right:3px;
 }
 
 .modal{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:#0008;
-    z-index:3000;
-    align-items:center;
-    justify-content:center;
-    padding:8px;
+display:none;
+position:fixed;
+inset:0;
+background:#0008;
+z-index:5000;
+align-items:center;
+justify-content:center;
+padding:8px;
 }
 
-.box{
-    background:white;
-    border-radius:11px;
-    width:min(720px,100%);
-    max-height:96dvh;
-    overflow:auto;
-    box-shadow:0 12px 35px #0008;
+.modalBox{
+width:min(720px,100%);
+max-height:96vh;
+overflow:auto;
+background:white;
+border-radius:12px;
 }
 
-.mhead{
-    background:#003366;
-    color:white;
-    padding:11px 14px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+.modalHeader{
+background:#003366;
+color:white;
+padding:12px;
+display:flex;
+justify-content:space-between;
+align-items:center;
 }
 
-.mhead h3{
-    margin:0;
-    font-size:17px;
+.modalHeader h3{
+margin:0;
 }
 
-.close{
-    background:transparent;
-    color:white;
-    font-size:24px;
-    padding:0 4px;
+.closeBtn{
+background:none;
+color:white;
+font-size:24px;
+padding:0 5px;
 }
 
-.body{
-    padding:13px;
+.modalBody{
+padding:13px;
 }
 
-.form{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
+.formGrid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:8px;
 }
 
 .full{
-    grid-column:1/-1;
+grid-column:1/-1;
 }
 
-.gps{
-    display:flex;
-    gap:6px;
+.gpsRow{
+display:flex;
+gap:6px;
 }
 
-.gps button{
-    background:#1976d2;
-    color:white;
-    white-space:nowrap;
+.gpsBtn{
+background:#1976d2;
+color:white;
 }
 
-.footer{
-    padding:10px 13px;
-    border-top:1px solid #ddd;
-    display:flex;
-    justify-content:flex-end;
-    gap:7px;
+.modalFooter{
+padding:10px 13px;
+border-top:1px solid #ddd;
+display:flex;
+justify-content:flex-end;
+gap:7px;
 }
 
-.cancel{
-    background:#e7ecef;
+.cancelBtn{
+background:#e7ecef;
 }
 
-.save{
-    background:#16a05d;
-    color:white;
+.saveBtn{
+background:#16a05d;
+color:white;
 }
 
-.empty{
-    display:none;
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    z-index:500;
-    background:white;
-    padding:10px 14px;
-    border-radius:8px;
-    box-shadow:0 2px 10px #0003;
-    font-size:12px;
-}
-
-.popup-title{
-    font-weight:bold;
-    color:#003366;
-    margin-bottom:4px;
-}
-
-.popup-row{
-    font-size:12px;
-    margin:2px 0;
-}
-
-.popup-buttons{
-    display:flex;
-    gap:5px;
-    margin-top:7px;
-}
-
-.popup-buttons button{
-    font-size:11px;
-    padding:6px 8px;
+.noAssets{
+display:none;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:white;
+padding:10px 15px;
+border-radius:8px;
+box-shadow:0 2px 10px #0004;
+z-index:500;
+font-size:12px;
 }
 
 @media(max-width:600px){
 
-    .title{
-        font-size:14px;
-    }
-
-    .sub{
-        font-size:9px;
-    }
-
-    .actions button{
-        font-size:11px;
-        padding:8px;
-    }
-
-    .grid{
-        grid-template-columns:1fr;
-    }
-
-    .form{
-        grid-template-columns:1fr;
-    }
-
-    .full{
-        grid-column:auto;
-    }
+.title{
+font-size:14px;
 }
+
+.subtitle{
+font-size:9px;
+}
+
+.actions button{
+font-size:11px;
+padding:8px;
+}
+
+.filterGrid{
+grid-template-columns:1fr;
+}
+
+.formGrid{
+grid-template-columns:1fr;
+}
+
+.full{
+grid-column:auto;
+}
+
+}
+
 </style>
 </head>
 
@@ -316,328 +299,376 @@ textarea{
 
 <header>
 
-    <div>
-        <div class="title">
-            TNEB Feeder Asset GIS
-        </div>
+<div>
 
-        <div class="sub">
-            RMG • RMU • Structure | Firebase Real-Time
-        </div>
-    </div>
+<div class="title">
+TNEB Feeder Asset GIS
+</div>
 
-    <div class="actions">
+<div class="subtitle">
+RMG • RMU • Structure
+</div>
 
-        <button class="add" onclick="openAddModal()">
-            ➕ Add
-        </button>
+</div>
 
-        <button class="export" onclick="exportData()">
-            💾 Export
-        </button>
+<div class="actions">
 
-    </div>
+<button
+class="addBtn"
+onclick="openAddModal()">
+➕ Add
+</button>
+
+<button
+class="exportBtn"
+onclick="exportCSV()">
+💾 Export
+</button>
+
+</div>
 
 </header>
 
 
 <div class="controls">
 
-    <div class="grid">
+<div class="filterGrid">
 
-        <div>
-            <label>Mobile</label>
-            <select id="mobileSelect"></select>
-        </div>
+<div>
 
-        <div>
-            <label>Substation</label>
-            <select id="ssSelect"></select>
-        </div>
+<label>Mobile</label>
 
-        <div>
-            <label>Feeder</label>
-            <select id="feederSelect"></select>
-        </div>
+<select id="mobileSelect">
+<option value="">All</option>
+</select>
 
-    </div>
+</div>
 
-    <div class="status">
 
-        <span id="count">
-            Assets: 0
-        </span>
+<div>
 
-        <span id="fbStatus">
-            Connecting...
-        </span>
+<label>Substation</label>
 
-    </div>
+<select id="ssSelect">
+<option value="">All</option>
+</select>
+
+</div>
+
+
+<div>
+
+<label>Feeder</label>
+
+<select id="feederSelect">
+<option value="">All</option>
+</select>
+
+</div>
+
+</div>
+
+
+<div class="status">
+
+<span id="assetCount">
+Assets: 0
+</span>
+
+<span id="firebaseStatus">
+Connecting...
+</span>
+
+</div>
 
 </div>
 
 
 <div id="map"></div>
 
-<div id="empty" class="empty">
-    No mapped assets for this selection.
+
+<div
+id="noAssets"
+class="noAssets">
+
+No mapped assets.
+
 </div>
 
 
 <button
 id="pinBtn"
-class="pin"
-onclick="togglePin()">
+class="pinBtn"
+onclick="togglePinMode()">
+
 📍 Pin on Map
+
 </button>
 
 
 <div class="legend">
 
-    <span>
-        <i class="dot" style="background:#1976d2"></i>
-        RMG
-    </span>
+<span>
+<i
+class="dot"
+style="background:#1976d2">
+</i>
+RMG
+</span>
 
-    <span>
-        <i class="dot" style="background:#e53935"></i>
-        RMU
-    </span>
+<span>
+<i
+class="dot"
+style="background:#e53935">
+</i>
+RMU
+</span>
 
-    <span>
-        <i class="dot" style="background:#43a047"></i>
-        Structure
-    </span>
-
-    <span>
-        <i class="dot" style="background:#fb8c00"></i>
-        Other
-    </span>
+<span>
+<i
+class="dot"
+style="background:#43a047">
+</i>
+Structure
+</span>
 
 </div>
 
 
-<!-- ADD / EDIT MODAL -->
+<!-- MODAL -->
 
-<div id="modal" class="modal">
+<div
+id="assetModal"
+class="modal">
 
-    <div class="box">
+<div class="modalBox">
 
-        <div class="mhead">
+<div class="modalHeader">
 
-            <h3 id="modalTitle">
-                Add Asset
-            </h3>
+<h3 id="modalTitle">
+Add Asset
+</h3>
 
-            <button
-            class="close"
-            onclick="closeModal()">
-                ×
-            </button>
-
-        </div>
-
-
-        <div class="body">
-
-            <div class="form">
-
-                <input
-                type="hidden"
-                id="m_id">
-
-
-                <div>
-                    <label>Mobile</label>
-                    <input
-                    id="m_mobile"
-                    placeholder="Mobile-1">
-                </div>
-
-
-                <div>
-                    <label>Substation</label>
-                    <input
-                    id="m_ss"
-                    placeholder="Guindy 110kV SS">
-                </div>
-
-
-                <div>
-                    <label>Feeder</label>
-                    <input
-                    id="m_feeder"
-                    placeholder="Industrial Feeder">
-                </div>
-
-
-                <div>
-                    <label>Branch</label>
-                    <input id="m_branch">
-                </div>
-
-
-                <div>
-                    <label>Sub Branch</label>
-                    <input id="m_subbranch">
-                </div>
-
-
-                <div>
-                    <label>AE Section</label>
-                    <input id="m_ae">
-                </div>
-
-
-                <div>
-
-                    <label>
-                        Asset Type
-                    </label>
-
-                    <select id="m_type">
-
-                        <option value="RMG">
-                            RMG
-                        </option>
-
-                        <option value="RMU">
-                            RMU
-                        </option>
-
-                        <option value="Structure">
-                            Structure
-                        </option>
-
-                        <option value="Other">
-                            Other
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div>
-
-                    <label>
-                        Asset Name / Number
-                    </label>
-
-                    <input
-                    id="m_name"
-                    required
-                    placeholder="RMG-001">
-
-                </div>
-
-
-                <div>
-
-                    <label>
-                        Sequence
-                    </label>
-
-                    <input
-                    id="m_seq"
-                    type="number"
-                    min="0">
-
-                </div>
-
-
-                <div>
-
-                    <label>
-                        Tie Feeder
-                    </label>
-
-                    <input id="m_tie">
-
-                </div>
-
-
-                <div class="full">
-
-                    <label>
-                        GPS Coordinates
-                    </label>
-
-                    <div class="gps">
-
-                        <input
-                        id="m_lat"
-                        type="number"
-                        step="any"
-                        placeholder="Latitude"
-                        required>
-
-                        <input
-                        id="m_lng"
-                        type="number"
-                        step="any"
-                        placeholder="Longitude"
-                        required>
-
-                        <button onclick="getGPS()">
-                            📍 GPS
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <div class="full">
-
-                    <label>
-                        Remarks
-                    </label>
-
-                    <textarea
-                    id="m_remarks"
-                    rows="3"></textarea>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="footer">
-
-            <button
-            class="cancel"
-            onclick="closeModal()">
-                Cancel
-            </button>
-
-            <button
-            class="save"
-            onclick="saveAsset()">
-                💾 Save Asset
-            </button>
-
-        </div>
-
-    </div>
+<button
+class="closeBtn"
+onclick="closeModal()">
+×
+</button>
 
 </div>
 
 
-<!-- Leaflet JS -->
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<div class="modalBody">
+
+<div class="formGrid">
+
+<input
+type="hidden"
+id="assetId">
+
+
+<div>
+
+<label>Mobile</label>
+
+<input
+id="m_mobile"
+placeholder="Mobile-1">
+
+</div>
+
+
+<div>
+
+<label>Substation</label>
+
+<input
+id="m_ss"
+placeholder="Guindy 110kV SS">
+
+</div>
+
+
+<div>
+
+<label>Feeder</label>
+
+<input
+id="m_feeder"
+placeholder="Industrial Feeder">
+
+</div>
+
+
+<div>
+
+<label>Branch</label>
+
+<input
+id="m_branch">
+
+</div>
+
+
+<div>
+
+<label>Sub Branch</label>
+
+<input
+id="m_subbranch">
+
+</div>
+
+
+<div>
+
+<label>AE Section</label>
+
+<input
+id="m_ae">
+
+</div>
+
+
+<div>
+
+<label>Asset Type</label>
+
+<select id="m_type">
+
+<option value="RMG">
+RMG
+</option>
+
+<option value="RMU">
+RMU
+</option>
+
+<option value="Structure">
+Structure
+</option>
+
+</select>
+
+</div>
+
+
+<div>
+
+<label>Asset Name / Number</label>
+
+<input
+id="m_name"
+placeholder="RMG-001">
+
+</div>
+
+
+<div>
+
+<label>Sequence</label>
+
+<input
+id="m_seq"
+type="number"
+min="0">
+
+</div>
+
+
+<div>
+
+<label>Tie Feeder</label>
+
+<input
+id="m_tie">
+
+</div>
+
+
+<div class="full">
+
+<label>GPS Coordinates</label>
+
+<div class="gpsRow">
+
+<input
+id="m_lat"
+type="number"
+step="any"
+placeholder="Latitude">
+
+<input
+id="m_lng"
+type="number"
+step="any"
+placeholder="Longitude">
+
+<button
+class="gpsBtn"
+onclick="getGPS()">
+
+📍 GPS
+
+</button>
+
+</div>
+
+</div>
+
+
+<div class="full">
+
+<label>Remarks</label>
+
+<textarea
+id="m_remarks"
+rows="3">
+</textarea>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="modalFooter">
+
+<button
+class="cancelBtn"
+onclick="closeModal()">
+
+Cancel
+
+</button>
+
+
+<button
+class="saveBtn"
+onclick="saveAsset()">
+
+💾 Save
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script
+src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js">
+</script>
 
 
 <script>
 
-"use strict";
-
-
-/* ============================================
+/* ==========================================
    FIREBASE
-============================================ */
+========================================== */
 
 const FIREBASE_URL =
 "https://tneb-gis-70e97-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -646,628 +677,1411 @@ const FIREBASE_PATH =
 "/tneb_network_assets";
 
 
+/* ==========================================
+   VARIABLES
+========================================== */
+
 let assets = [];
 
 let map = null;
 
-let markers = null;
+let markerLayer = null;
 
-let lines = null;
-
-let firebaseStream = null;
+let lineLayer = null;
 
 let pinMode = false;
 
+let firebaseStream = null;
 
-/* ============================================
-   HELPER
-============================================ */
+
+/* ==========================================
+   SHORT ID FUNCTION
+========================================== */
 
 function $(id){
 
-    return document.getElementById(id);
+return document.getElementById(id);
 
 }
 
 
-function escapeHTML(value){
-
-    return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-
-}
-
-
-function numberValue(value){
-
-    const n = Number(value);
-
-    return Number.isFinite(n) ? n : null;
-
-}
-
+/* ==========================================
+   CREATE ID
+========================================== */
 
 function createID(){
 
-    return "ast_" +
-    Date.now() +
-    "_" +
-    Math.random()
-    .toString(36)
-    .substring(2,8);
+return "asset_" +
+Date.now() +
+"_" +
+Math.random()
+.toString(36)
+.substring(2,8);
 
 }
 
 
-function normalizeAsset(asset,key){
+/* ==========================================
+   NUMBER
+========================================== */
 
-    asset = asset || {};
+function numberValue(value){
 
-    return {
+const n = Number(value);
 
-        id:String(
-            asset.id ||
-            key ||
-            createID()
-        ),
-
-        mobile:String(
-            asset.mobile ||
-            "Mobile-1"
-        ),
-
-        ss:String(
-            asset.ss ||
-            asset.substation ||
-            ""
-        ),
-
-        feeder:String(
-            asset.feeder ||
-            ""
-        ),
-
-        branch:String(
-            asset.branch ||
-            ""
-        ),
-
-        subbranch:String(
-            asset.subbranch ||
-            ""
-        ),
-
-        ae:String(
-            asset.ae ||
-            asset.aeSection ||
-            ""
-        ),
-
-        type:
-        ["RMG","RMU","Structure","Other"]
-        .includes(asset.type)
-        ?
-        asset.type
-        :
-        "Other",
-
-        name:String(
-            asset.name ||
-            asset.assetName ||
-            ""
-        ),
-
-        seq:
-        numberValue(
-            asset.seq ||
-            asset.sequence
-        ) || 0,
-
-        lat:
-        numberValue(
-            asset.lat ||
-            asset.latitude
-        ),
-
-        lng:
-        numberValue(
-            asset.lng ||
-            asset.longitude
-        ),
-
-        tie:String(
-            asset.tie ||
-            asset.tieFeeder ||
-            ""
-        ),
-
-        remarks:String(
-            asset.remarks ||
-            ""
-        )
-
-    };
+return Number.isFinite(n)
+? n
+: null;
 
 }
 
 
-/* ============================================
+/* ==========================================
+   NORMALIZE ASSET
+========================================== */
+
+function normalizeAsset(data,key){
+
+data = data || {};
+
+return {
+
+id:String(
+data.id ||
+key ||
+createID()
+),
+
+mobile:String(
+data.mobile ||
+"Mobile-1"
+),
+
+ss:String(
+data.ss ||
+data.substation ||
+""
+),
+
+feeder:String(
+data.feeder ||
+""
+),
+
+branch:String(
+data.branch ||
+""
+),
+
+subbranch:String(
+data.subbranch ||
+""
+),
+
+ae:String(
+data.ae ||
+data.aeSection ||
+""
+),
+
+type:
+data.type === "RMU"
+?
+"RMU"
+:
+data.type === "Structure"
+?
+"Structure"
+:
+"RMG",
+
+name:String(
+data.name ||
+data.assetName ||
+""
+),
+
+seq:
+numberValue(
+data.seq ||
+data.sequence
+) || 0,
+
+lat:
+numberValue(
+data.lat ||
+data.latitude
+),
+
+lng:
+numberValue(
+data.lng ||
+data.longitude
+),
+
+tie:String(
+data.tie ||
+data.tieFeeder ||
+""
+),
+
+remarks:String(
+data.remarks ||
+""
+)
+
+};
+
+}
+
+
+/* ==========================================
    STATUS
-============================================ */
+========================================== */
 
-function setStatus(message,good){
+function setFirebaseStatus(
+message,
+success
+){
 
-    $("fbStatus").textContent =
-    message;
+$("firebaseStatus").textContent =
+message;
 
-    $("fbStatus").className =
-    good ? "ok" : "err";
-
-}
-
-
-/* ============================================
-   LOCAL CACHE
-============================================ */
-
-function saveCache(){
-
-    try{
-
-        localStorage.setItem(
-            "tneb_assets",
-            JSON.stringify(assets)
-        );
-
-    }catch(error){
-
-        console.log(error);
-
-    }
+$("firebaseStatus").className =
+success
+?
+"statusOK"
+:
+"statusError";
 
 }
 
 
-function loadCache(){
+/* ==========================================
+   LOCAL STORAGE
+========================================== */
 
-    try{
+function saveLocal(){
 
-        const data =
-        JSON.parse(
-            localStorage.getItem(
-                "tneb_assets"
-            ) || "[]"
-        );
+try{
 
-        if(Array.isArray(data)){
+localStorage.setItem(
+"tneb_assets",
+JSON.stringify(assets)
+);
 
-            return data.map(
-                (asset,index)=>
-                normalizeAsset(
-                    asset,
-                    asset.id ||
-                    "cache_"+index
-                )
-            );
+}catch(error){
 
-        }
+console.log(error);
 
-    }catch(error){
-
-        console.log(error);
-
-    }
-
-    return [];
+}
 
 }
 
 
-/* ============================================
-   MAP INITIALIZATION
-============================================ */
+function loadLocal(){
+
+try{
+
+const data =
+JSON.parse(
+localStorage.getItem(
+"tneb_assets"
+) || "[]"
+);
+
+if(Array.isArray(data)){
+
+return data.map(
+(item,index)=>
+normalizeAsset(
+item,
+item.id ||
+"local_"+index
+)
+);
+
+}
+
+}catch(error){
+
+console.log(error);
+
+}
+
+return [];
+
+}
+
+
+/* ==========================================
+   MAP
+========================================== */
 
 function initializeMap(){
 
-    map =
-    L.map(
-        "map",
-        {
-            zoomControl:true
-        }
-    ).setView(
-        [13.0080,80.2040],
-        14
-    );
+map =
+L.map(
+"map"
+).setView(
+[13.0080,80.2040],
+14
+);
 
 
-    /*
-       OpenStreetMap
-       No API key required
-    */
+/*
+OpenStreetMap
+*/
 
-    L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
+L.tileLayer(
+"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
 
-            maxZoom:19,
+maxZoom:19,
 
-            attribution:
-            "&copy; OpenStreetMap contributors"
+attribution:
+"&copy; OpenStreetMap contributors"
 
-        }
-    ).addTo(map);
-
-
-    markers =
-    L.layerGroup()
-    .addTo(map);
+}
+).addTo(map);
 
 
-    lines =
-    L.layerGroup()
-    .addTo(map);
+markerLayer =
+L.layerGroup()
+.addTo(map);
 
 
-    map.on(
-        "click",
-        function(event){
-
-            if(!pinMode){
-
-                return;
-
-            }
+lineLayer =
+L.layerGroup()
+.addTo(map);
 
 
-            openAddModal();
+map.on(
+"click",
+function(event){
 
+if(!pinMode){
 
-            $("m_lat").value =
-            event.latlng.lat.toFixed(6);
-
-
-            $("m_lng").value =
-            event.latlng.lng.toFixed(6);
-
-
-            togglePin();
-
-        }
-    );
-
-
-    /*
-       Important for mobile browsers
-    */
-
-    setTimeout(
-        function(){
-
-            map.invalidateSize();
-
-        },
-        500
-    );
+return;
 
 }
 
 
-/* ============================================
-   FILTERS
-============================================ */
-
-function fillSelect(
-    elementID,
-    values,
-    currentValue
-){
-
-    const element =
-    $(elementID);
+openAddModal();
 
 
-    const unique =
-    [
-        ...new Set(
-            values
-            .filter(Boolean)
-            .map(String)
-        )
-    ].sort();
+$("m_lat").value =
+event.latlng.lat.toFixed(6);
 
 
-    element.innerHTML =
-    '<option value="">All</option>';
+$("m_lng").value =
+event.latlng.lng.toFixed(6);
 
 
-    unique.forEach(
-        function(value){
+togglePinMode();
 
-            const option =
-            document.createElement(
-                "option"
-            );
-
-            option.value =
-            value;
-
-            option.textContent =
-            value;
-
-            element.appendChild(
-                option
-            );
-
-        }
-    );
+}
+);
 
 
-    if(
-        unique.includes(
-            currentValue
-        )
-    ){
+/*
+Important for mobile
+*/
 
-        element.value =
-        currentValue;
+setTimeout(
+function(){
 
-    }
+map.invalidateSize();
+
+},
+500
+);
 
 }
 
 
-function updateFilters(){
-
-    const mobile =
-    $("mobileSelect").value;
-
-    const ss =
-    $("ssSelect").value;
-
-    const feeder =
-    $("feederSelect").value;
-
-
-    fillSelect(
-        "mobileSelect",
-        assets.map(
-            asset=>asset.mobile
-        ),
-        mobile
-    );
-
-
-    const selectedMobile =
-    $("mobileSelect").value;
-
-
-    fillSelect(
-        "ssSelect",
-
-        assets
-        .filter(
-            asset =>
-            !selectedMobile ||
-            asset.mobile === selectedMobile
-        )
-        .map(
-            asset=>asset.ss
-        ),
-
-        ss
-    );
-
-
-    const selectedSS =
-    $("ssSelect").value;
-
-
-    fillSelect(
-        "feederSelect",
-
-        assets
-        .filter(
-            asset =>
-            (!selectedMobile ||
-             asset.mobile === selectedMobile)
-
-            &&
-
-            (!selectedSS ||
-             asset.ss === selectedSS)
-        )
-        .map(
-            asset=>asset.feeder
-        ),
-
-        feeder
-    );
-
-}
-
-
-function getSelectedAssets(){
-
-    const mobile =
-    $("mobileSelect").value;
-
-    const ss =
-    $("ssSelect").value;
-
-    const feeder =
-    $("feederSelect").value;
-
-
-    return assets.filter(
-        function(asset){
-
-            return
-
-            (!mobile ||
-             asset.mobile === mobile)
-
-            &&
-
-            (!ss ||
-             asset.ss === ss)
-
-            &&
-
-            (!feeder ||
-             asset.feeder === feeder);
-
-        }
-    );
-
-}
-
-
-/* ============================================
-   ASSET COLORS
-============================================ */
+/* ==========================================
+   ASSET COLOR
+========================================== */
 
 function assetColor(type){
 
-    if(type === "RMG"){
+if(type === "RMG"){
 
-        return "#1976d2";
+return "#1976d2";
 
-    }
+}
 
-    if(type === "RMU"){
+if(type === "RMU"){
 
-        return "#e53935";
+return "#e53935";
 
-    }
+}
 
-    if(type === "Structure"){
+if(type === "Structure"){
 
-        return "#43a047";
+return "#43a047";
 
-    }
+}
 
-    return "#fb8c00";
+return "#fb8c00";
 
 }
 
 
-/* ============================================
+/* ==========================================
+   FILTER OPTIONS
+========================================== */
+
+function fillSelect(
+id,
+values,
+oldValue
+){
+
+const select =
+$(id);
+
+const unique =
+[
+...new Set(
+values
+.filter(Boolean)
+)
+].sort();
+
+
+select.innerHTML =
+'<option value="">All</option>';
+
+
+unique.forEach(
+function(value){
+
+const option =
+document.createElement(
+"option"
+);
+
+option.value =
+value;
+
+option.textContent =
+value;
+
+select.appendChild(
+option
+);
+
+}
+);
+
+
+if(
+unique.includes(oldValue)
+){
+
+select.value =
+oldValue;
+
+}
+
+}
+
+
+/* ==========================================
+   FILTERS
+========================================== */
+
+function updateFilters(){
+
+const mobile =
+$("mobileSelect").value;
+
+const ss =
+$("ssSelect").value;
+
+const feeder =
+$("feederSelect").value;
+
+
+fillSelect(
+"mobileSelect",
+assets.map(
+asset =>
+asset.mobile
+),
+mobile
+);
+
+
+const selectedMobile =
+$("mobileSelect").value;
+
+
+fillSelect(
+"ssSelect",
+
+assets
+.filter(
+asset =>
+!selectedMobile ||
+asset.mobile ===
+selectedMobile
+)
+.map(
+asset =>
+asset.ss
+),
+
+ss
+);
+
+
+const selectedSS =
+$("ssSelect").value;
+
+
+fillSelect(
+"feederSelect",
+
+assets
+.filter(
+asset =>
+(!selectedMobile ||
+asset.mobile ===
+selectedMobile)
+&&
+(!selectedSS ||
+asset.ss ===
+selectedSS)
+)
+.map(
+asset =>
+asset.feeder
+),
+
+feeder
+);
+
+}
+
+
+/* ==========================================
+   SELECTED ASSETS
+========================================== */
+
+function getSelectedAssets(){
+
+const mobile =
+$("mobileSelect").value;
+
+const ss =
+$("ssSelect").value;
+
+const feeder =
+$("feederSelect").value;
+
+
+return assets.filter(
+function(asset){
+
+return
+
+(!mobile ||
+asset.mobile === mobile)
+
+&&
+
+(!ss ||
+asset.ss === ss)
+
+&&
+
+(!feeder ||
+asset.feeder === feeder);
+
+}
+);
+
+}
+
+
+/* ==========================================
+   HTML ESCAPE
+========================================== */
+
+function escapeHTML(value){
+
+return String(value ?? "")
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;")
+.replace(/"/g,"&quot;")
+.replace(/'/g,"&#039;");
+
+}
+
+
+/* ==========================================
    RENDER MAP
-============================================ */
+========================================== */
 
 function renderMap(){
 
-    if(!map){
+if(!map){
 
-        return;
+return;
 
-    }
-
-
-    markers.clearLayers();
-
-    lines.clearLayers();
+}
 
 
-    const selected =
-    getSelectedAssets();
+markerLayer.clearLayers();
+
+lineLayer.clearLayers();
 
 
-    const mapped =
-    selected.filter(
-        asset =>
-        asset.lat !== null &&
-        asset.lng !== null
-    );
+const selected =
+getSelectedAssets();
 
 
-    $("count").textContent =
-    "Assets: " +
-    selected.length +
-    " | Mapped: " +
-    mapped.length;
+const mapped =
+selected.filter(
+asset =>
+asset.lat !== null &&
+asset.lng !== null
+);
 
 
-    $("empty").style.display =
-    mapped.length
-    ?
-    "none"
-    :
-    "block";
+$("assetCount").textContent =
+"Assets: " +
+selected.length +
+" | Mapped: " +
+mapped.length;
 
 
-    mapped.forEach(
-        function(asset){
-
-            const marker =
-            L.circleMarker(
-                [
-                    asset.lat,
-                    asset.lng
-                ],
-                {
-
-                    radius:9,
-
-                    color:"#ffffff",
-
-                    weight:2,
-
-                    fillColor:
-                    assetColor(
-                        asset.type
-                    ),
-
-                    fillOpacity:.95
-
-                }
-            );
+$("noAssets").style.display =
+mapped.length
+?
+"none"
+:
+"block";
 
 
-            const popup =
+mapped.forEach(
+function(asset){
 
-            '<div class="popup-title">' +
+const marker =
+L.circleMarker(
+[
+asset.lat,
+asset.lng
+],
+{
 
-            escapeHTML(
-                asset.name ||
-                asset.type
-            ) +
+radius:9,
 
-            '</div>' +
+color:"#ffffff",
 
-            '<div class="popup-row">' +
-            '<b>Type:</b> ' +
-            escapeHTML(asset.type) +
-            '</div>' +
+weight:2,
 
-            '<div class="popup-row">' +
-            '<b>Mobile:</b> ' +
-            escapeHTML(asset.mobile) +
-            '</div>' +
+fillColor:
+assetColor(
+asset.type
+),
 
-            '<div class="popup-row">' +
-            '<b>Substation:</b> ' +
-            escapeHTML(asset.ss) +
-            '</div>' +
+fillOpacity:.95
 
-            '<div class="popup-row">' +
-            '<b>Feeder:</b> ' +
-            escapeHTML(asset.feeder) +
-            '</div>' +
+}
+);
 
-            '<div class="popup-row">' +
-            '<b>Branch:</b> ' +
-            escapeHTML(asset.branch) +
-            '</div>' +
 
-            '<div class="popup-row">' +
-            '<b>Sequence:</b> ' +
-            escapeHTML(asset.seq) +
-            '</div>' +
+const popup =
 
-            '
+"<b>" +
+escapeHTML(
+asset.name ||
+asset.type
+) +
+"</b>" +
+
+"<br>Type: " +
+escapeHTML(
+asset.type
+) +
+
+"<br>Mobile: " +
+escapeHTML(
+asset.mobile
+) +
+
+"<br>Substation: " +
+escapeHTML(
+asset.ss
+) +
+
+"<br>Feeder: " +
+escapeHTML(
+asset.feeder
+) +
+
+"<br>Branch: " +
+escapeHTML(
+asset.branch
+) +
+
+"<br>Sequence: " +
+escapeHTML(
+asset.seq
+) +
+
+"<br>Latitude: " +
+asset.lat.toFixed(6) +
+
+"<br>Longitude: " +
+asset.lng.toFixed(6) +
+
+"<br><br>" +
+
+"<button onclick=\"editAsset('" +
+asset.id +
+"')\">✏️ Edit</button> " +
+
+"<button onclick=\"deleteAsset('" +
+asset.id +
+"')\">🗑️ Delete</button>";
+
+
+marker
+.bindPopup(popup)
+.addTo(markerLayer);
+
+}
+);
+
+
+/*
+Draw feeder route
+*/
+
+const ordered =
+[...mapped].sort(
+(a,b)=>
+Number(a.seq) -
+Number(b.seq)
+);
+
+
+if(
+ordered.length > 1
+){
+
+L.polyline(
+ordered.map(
+asset =>
+[
+asset.lat,
+asset.lng
+]
+),
+{
+
+weight:3,
+
+opacity:.65
+
+}
+).addTo(lineLayer);
+
+}
+
+
+/*
+Zoom to assets
+*/
+
+if(mapped.length){
+
+map.fitBounds(
+mapped.map(
+asset =>
+[
+asset.lat,
+asset.lng
+]
+),
+{
+
+padding:[
+30,
+30
+],
+
+maxZoom:17
+
+}
+);
+
+}
+
+
+setTimeout(
+function(){
+
+map.invalidateSize();
+
+},
+200
+);
+
+}
+
+
+/* ==========================================
+   REFRESH
+========================================== */
+
+function refresh(){
+
+updateFilters();
+
+renderMap();
+
+}
+
+
+/* ==========================================
+   OPEN ADD
+========================================== */
+
+function openAddModal(){
+
+$("modalTitle").textContent =
+"Add Asset";
+
+
+$("assetId").value =
+"";
+
+
+$("m_mobile").value =
+$("mobileSelect").value ||
+"Mobile-1";
+
+
+$("m_ss").value =
+$("ssSelect").value ||
+"";
+
+
+$("m_feeder").value =
+$("feederSelect").value ||
+"";
+
+
+$("m_branch").value =
+"";
+
+$("m_subbranch").value =
+"";
+
+$("m_ae").value =
+"";
+
+$("m_type").value =
+"RMG";
+
+$("m_name").value =
+"";
+
+$("m_seq").value =
+"";
+
+$("m_lat").value =
+"";
+
+$("m_lng").value =
+"";
+
+$("m_tie").value =
+"";
+
+$("m_remarks").value =
+"";
+
+
+$("assetModal").style.display =
+"flex";
+
+}
+
+
+/* ==========================================
+   CLOSE MODAL
+========================================== */
+
+function closeModal(){
+
+$("assetModal").style.display =
+"none";
+
+}
+
+
+/* ==========================================
+   EDIT
+========================================== */
+
+function editAsset(id){
+
+const asset =
+assets.find(
+item =>
+item.id === id
+);
+
+
+if(!asset){
+
+alert(
+"Asset not found."
+);
+
+return;
+
+}
+
+
+$("modalTitle").textContent =
+"Edit Asset";
+
+
+$("assetId").value =
+asset.id;
+
+
+$("m_mobile").value =
+asset.mobile;
+
+$("m_ss").value =
+asset.ss;
+
+$("m_feeder").value =
+asset.feeder;
+
+$("m_branch").value =
+asset.branch;
+
+$("m_subbranch").value =
+asset.subbranch;
+
+$("m_ae").value =
+asset.ae;
+
+$("m_type").value =
+asset.type;
+
+$("m_name").value =
+asset.name;
+
+$("m_seq").value =
+asset.seq;
+
+$("m_lat").value =
+asset.lat ?? "";
+
+$("m_lng").value =
+asset.lng ?? "";
+
+$("m_tie").value =
+asset.tie;
+
+$("m_remarks").value =
+asset.remarks;
+
+
+$("assetModal").style.display =
+"flex";
+
+}
+
+
+/* ==========================================
+   SAVE
+========================================== */
+
+async function saveAsset(){
+
+const id =
+$("assetId").value.trim() ||
+createID();
+
+
+const lat =
+numberValue(
+$("m_lat").value
+);
+
+
+const lng =
+numberValue(
+$("m_lng").value
+);
+
+
+if(
+!$("m_name").value.trim()
+){
+
+alert(
+"Enter Asset Name / Number."
+);
+
+return;
+
+}
+
+
+if(
+lat === null ||
+lng === null
+){
+
+alert(
+"Enter valid Latitude and Longitude."
+);
+
+return;
+
+}
+
+
+if(
+lat < -90 ||
+lat > 90 ||
+lng < -180 ||
+lng > 180
+){
+
+alert(
+"Invalid coordinates."
+);
+
+return;
+
+}
+
+
+const asset =
+normalizeAsset(
+{
+
+id:id,
+
+mobile:
+$("m_mobile").value.trim()
+||
+"Mobile-1",
+
+ss:
+$("m_ss").value.trim(),
+
+feeder:
+$("m_feeder").value.trim(),
+
+branch:
+$("m_branch").value.trim(),
+
+subbranch:
+$("m_subbranch").value.trim(),
+
+ae:
+$("m_ae").value.trim(),
+
+type:
+$("m_type").value,
+
+name:
+$("m_name").value.trim(),
+
+seq:
+$("m_seq").value,
+
+lat:lat,
+
+lng:lng,
+
+tie:
+$("m_tie").value.trim(),
+
+remarks:
+$("m_remarks").value.trim()
+
+},
+id
+);
+
+
+const index =
+assets.findIndex(
+item =>
+item.id === id
+);
+
+
+if(index >= 0){
+
+assets[index] =
+asset;
+
+}else{
+
+assets.push(
+asset
+);
+
+}
+
+
+saveLocal();
+
+refresh();
+
+closeModal();
+
+
+/*
+Firebase
+*/
+
+try{
+
+const response =
+await fetch(
+FIREBASE_URL +
+FIREBASE_PATH +
+"/" +
+encodeURIComponent(id) +
+".json",
+{
+
+method:"PUT",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:
+JSON.stringify(asset)
+
+}
+);
+
+
+if(!response.ok){
+
+throw new Error(
+"HTTP " +
+response.status
+);
+
+}
+
+
+setFirebaseStatus(
+"Firebase: Saved",
+true
+);
+
+
+}catch(error){
+
+console.error(
+error
+);
+
+
+setFirebaseStatus(
+"Firebase save failed",
+false
+);
+
+
+alert(
+"Saved on this device, but Firebase could not be updated."
+);
+
+}
+
+}
+
+
+/* ==========================================
+   DELETE
+========================================== */
+
+async function deleteAsset(id){
+
+const asset =
+assets.find(
+item =>
+item.id === id
+);
+
+
+if(!asset){
+
+return;
+
+}
+
+
+if(
+!confirm(
+"Delete " +
+asset.name +
+"?"
+)
+){
+
+return;
+
+}
+
+
+assets =
+assets.filter(
+item =>
+item.id !== id
+);
+
+
+saveLocal();
+
+refresh();
+
+
+try{
+
+const response =
+await fetch(
+FIREBASE_URL +
+FIREBASE_PATH +
+"/" +
+encodeURIComponent(id) +
+".json",
+{
+
+method:"DELETE"
+
+}
+);
+
+
+if(!response.ok){
+
+throw new Error(
+"HTTP " +
+response.status
+);
+
+}
+
+
+setFirebaseStatus(
+"Firebase: Deleted",
+true
+);
+
+
+}catch(error){
+
+console.error(
+error
+);
+
+setFirebaseStatus(
+"Firebase delete failed",
+false
+);
+
+}
+
+}
+
+
+/* ==========================================
+   GPS
+========================================== */
+
+function getGPS(){
+
+if(
+!navigator.geolocation
+){
+
+alert(
+"GPS is not supported."
+);
+
+return;
+
+}
+
+
+navigator.geolocation.getCurrentPosition(
+
+function(position){
+
+$("m_lat").value =
+position.coords.latitude
+.toFixed(6);
+
+
+$("m_lng").value =
+position.coords.longitude
+.toFixed(6);
+
+},
+
+function(error){
+
+alert(
+"GPS error: " +
+error.message
+);
+
+},
+
+{
+
+enableHighAccuracy:true,
+
+timeout:15000,
+
+maximumAge:0
+
+}
+
+);
+
+}
+
+
+/* ==========================================
+   PIN MODE
+========================================== */
+
+function togglePinMode(){
+
+pinMode =
+!pinMode;
+
+
+$("pinBtn").classList.toggle(
+"active",
+pinMode
+);
+
+
+$("pinBtn").textContent =
+pinMode
+?
+"✖ Cancel Pin"
+:
+"📍 Pin on Map";
+
+
+if(map){
+
+map.getContainer().style.cursor =
+pinMode
+?
+"crosshair"
+:
+"";
+
+}
+
+}
+
+
+/* ==========================================
+   FIREBASE LOAD
+========================================== */
+
+async function loadFirebase(){
+
+try{
+
+const response =
+await fetch(
+FIREBASE_URL +
+FIREBASE_PATH +
+".json",
+{
+cache:"no-store"
+}
+);
+
+
+if(!response.ok){
+
+throw new Error(
+"HTTP " +
+response.status
+);
+
+}
+
+
+const data =
+await response.json();
+
+
+if(
+data &&
+typeof data === "object"
+){
+
+assets =
+Object.entries(data)
+.map(
+([key,value]) =>
+normalizeAsset(
+value,
+key
+)
+);
+
+
+saveLocal();
+
+refresh();
+
+
+setFirebaseStatus(
+"Firebase: Connected",
+true
+);
+
+}else{
+
+setFirebaseStatus(
+"Firebase: Connected - No assets",
+true
+);
+
+}
+
+}catch(error){
+
+console.error(
+"Firebase:",
+error
+);
+
+
+setFirebaseStatus(
+"Firebase unavailable",
